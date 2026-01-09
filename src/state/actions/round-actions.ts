@@ -58,7 +58,22 @@ function assignColorsWithConstraints(
 }
 
 export const roundActions = {
-	async assignColorsAndStartRound() {
+	async assignColorsAndStartRound(
+		colorStores?: Record<ColorName, KokimokiStore<ColorFactionState>>
+	) {
+		// Clear all color faction stores from previous round
+		if (colorStores) {
+			await Promise.all(
+				COLORS.map((color) => {
+					const store = colorStores[color];
+					if (store) {
+						return colorActions.clearFaction(store);
+					}
+					return Promise.resolve();
+				})
+			);
+		}
+
 		// Assign colors to players
 		await kmClient.transact([globalStore], ([globalState]) => {
 			// Get list of online player IDs

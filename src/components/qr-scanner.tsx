@@ -1,3 +1,4 @@
+import { BrowserMultiFormatReader } from '@zxing/browser';
 import { X } from 'lucide-react';
 import * as React from 'react';
 
@@ -8,10 +9,9 @@ interface QrScannerProps {
 
 export const QrScanner: React.FC<QrScannerProps> = ({ onScan, onClose }) => {
 	const videoRef = React.useRef<HTMLVideoElement>(null);
-	const canvasRef = React.useRef<HTMLCanvasElement>(null);
 	const [error, setError] = React.useState<string | null>(null);
 	const [isScanning, setIsScanning] = React.useState(true);
-	const animationFrameRef = React.useRef<number | undefined>(undefined);
+	const codeReaderRef = React.useRef<BrowserMultiFormatReader | null>(null);
 	const isScanningRef = React.useRef(true);
 	const callbackRef = React.useRef(onScan);
 
@@ -20,77 +20,30 @@ export const QrScanner: React.FC<QrScannerProps> = ({ onScan, onClose }) => {
 		callbackRef.current = onScan;
 	}, [onScan]);
 
-	// Create scanning function that will be stored in a ref
-	const createScanFunction = React.useCallback(() => {
-		const scanFunction = () => {
-			const video = videoRef.current;
-			const canvas = canvasRef.current;
-
-			if (!video || !canvas || !isScanningRef.current) return;
-
-			const ctx = canvas.getContext('2d');
-			if (!ctx) return;
-
-			canvas.width = video.videoWidth;
-			canvas.height = video.videoHeight;
-
-			ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-			try {
-				// Try to decode using the Zxing library if available
-				const ZXing = (window as unknown as Record<string, unknown>)
-					.ZXing as Record<string, unknown>;
-				if (ZXing) {
-					const BrowserMultiFormatReader =
-						ZXing.BrowserMultiFormatReader as new () => {
-							decodeFromCanvas: (
-								canvas: HTMLCanvasElement
-							) => { text: string } | null;
-						};
-					const codeReader = new BrowserMultiFormatReader();
-					try {
-						const result = codeReader.decodeFromCanvas(canvas);
-						if (result?.text) {
-							isScanningRef.current = false;
-							setIsScanning(false);
-							callbackRef.current(result.text);
-							return;
-						}
-					} catch {
-						// QR code not found in this frame, continue scanning
-					}
-				}
-			} catch {
-				// Continue scanning on error
-			}
-
-			// Continue scanning
-			if (isScanningRef.current) {
-				animationFrameRef.current = requestAnimationFrame(scanFunction);
-			}
-		};
-
-		return scanFunction;
-	}, []);
-
 	// Request camera permission and start scanning
 	React.useEffect(() => {
-		const scanFunction = createScanFunction();
-
-		const startCamera = async () => {
+		const startScanning = async () => {
 			try {
-				const stream = await navigator.mediaDevices.getUserMedia({
-					video: { facingMode: 'environment' }
-				});
+				const codeReader = new BrowserMultiFormatReader();
+				codeReaderRef.current = codeReader;
 
-				if (videoRef.current) {
-					videoRef.current.srcObject = stream;
-					// Wait for video to load metadata
-					videoRef.current.onloadedmetadata = () => {
-						videoRef.current?.play();
-						scanFunction();
-					};
-				}
+				await codeReader.decodeFromVideoDevice(
+					undefined, // use default camera
+					videoRef.current!,
+					(result, err) => {
+						if (!isScanningRef.current) return;
+
+						if (result) {
+							isScanningRef.current = false;
+							setIsScanning(false);
+							callbackRef.current(result.getText());
+						}
+						// Ignore errors - they just mean no QR found in frame
+						if (err && err.name !== 'NotFoundException') {
+							console.warn('QR scan error:', err);
+						}
+					}
+				);
 			} catch (err) {
 				const message =
 					err instanceof Error ? err.message : 'Failed to access camera';
@@ -99,24 +52,20 @@ export const QrScanner: React.FC<QrScannerProps> = ({ onScan, onClose }) => {
 			}
 		};
 
-		startCamera();
+		startScanning();
+
+		// Capture ref for cleanup
+		const videoElement = videoRef.current;
 
 		return () => {
-			// Clean up camera stream - store ref to avoid stale closure issues
-			// We intentionally store videoRef.current in a local var to capture it at cleanup time
-			// eslint-disable-next-line react-hooks/exhaustive-deps
-			const video = videoRef.current;
-			if (video?.srcObject) {
-				const stream = video.srcObject as MediaStream;
+			isScanningRef.current = false;
+			// Stop the code reader and release camera
+			if (codeReaderRef.current && videoElement?.srcObject) {
+				const stream = videoElement.srcObject as MediaStream;
 				stream.getTracks().forEach((track) => track.stop());
 			}
-
-			// Cancel animation frame
-			if (animationFrameRef.current) {
-				cancelAnimationFrame(animationFrameRef.current);
-			}
 		};
-	}, [createScanFunction]);
+	}, []);
 
 	return (
 		<div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 p-4">
@@ -135,8 +84,13 @@ export const QrScanner: React.FC<QrScannerProps> = ({ onScan, onClose }) => {
 				) : (
 					<>
 						<div className="relative overflow-hidden rounded-xl bg-black">
-							<video ref={videoRef} className="w-full" autoPlay playsInline />
-							<canvas ref={canvasRef} className="hidden" />
+							<video
+								ref={videoRef}
+								className="w-full"
+								autoPlay
+								playsInline
+								muted
+							/>
 							{isScanning && (
 								<div className="absolute inset-0 flex items-center justify-center">
 									<div className="h-64 w-64 border-4 border-green-500 opacity-50" />

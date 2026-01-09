@@ -3,8 +3,7 @@ import { useServerTimer } from '@/hooks/useServerTime';
 import { colorActions } from '@/state/actions/color-actions';
 import {
 	createColorFactionState,
-	getColorStoreName,
-	type ColorFactionState
+	getColorStoreName
 } from '@/state/stores/color-store';
 import { globalStore, type ColorName } from '@/state/stores/global-store';
 import { useSnapshot } from '@kokimoki/app';
@@ -82,6 +81,7 @@ export const ColorPresenterView: React.FC = () => {
 	);
 
 	// Memoize faction counts - only recalculate when snapshots change
+	// Calculate the LARGEST CONNECTED FACTION, not total players
 	const factionCounts = React.useMemo(() => {
 		const counts: Record<ColorName, number> = {
 			red: 0,
@@ -90,25 +90,26 @@ export const ColorPresenterView: React.FC = () => {
 			yellow: 0
 		};
 
-		// Use snapshots to get player counts (triggers reactivity)
-		const snapshots: Record<ColorName, ColorFactionState> = {
-			red: snapshotRed,
-			blue: snapshotBlue,
-			green: snapshotGreen,
-			yellow: snapshotYellow
-		};
+		// Force reactivity by accessing snapshots (even though we use stores for calculation)
+		// This ensures recalculation when players/edges change
+		const _triggerReactivity = [
+			Object.keys(snapshotRed.players || {}).length,
+			Object.keys(snapshotRed.edges || {}).length,
+			Object.keys(snapshotBlue.players || {}).length,
+			Object.keys(snapshotBlue.edges || {}).length,
+			Object.keys(snapshotGreen.players || {}).length,
+			Object.keys(snapshotGreen.edges || {}).length,
+			Object.keys(snapshotYellow.players || {}).length,
+			Object.keys(snapshotYellow.edges || {}).length
+		];
+		// Suppress unused variable warning
+		void _triggerReactivity;
 
+		// Calculate largest connected faction for each color
 		for (const color of COLORS) {
-			const snapshot = snapshots[color];
-			if (snapshot?.players) {
-				// Use player count from centralized store
-				counts[color] = Object.keys(snapshot.players).length;
-			}
-			// Also calculate largest faction for more accurate display
 			const store = colorStores[color];
 			if (store) {
-				const largestFaction = colorActions.calculateLargestFaction(store);
-				counts[color] = Math.max(counts[color], largestFaction);
+				counts[color] = colorActions.calculateLargestFaction(store);
 			}
 		}
 
@@ -182,7 +183,7 @@ export const ColorPresenterView: React.FC = () => {
 								{factionCounts[color]}
 							</p>
 							<p className="text-sm font-semibold text-white/80 lg:text-lg">
-								{factionCounts[color] === 1 ? 'player' : 'players'}
+								largest group
 							</p>
 						</div>
 					))}

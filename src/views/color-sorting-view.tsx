@@ -50,19 +50,40 @@ export const ColorSortingView: React.FC = () => {
 		}
 	}, [isConnected, playerColor, colorStore]);
 
-	// Generate QR code URL with player's Kokimoki ID
-	const qrCodeUrl = `${window.location.origin}/join?playerCode=${kmClient.id}`;
+	// Generate QR code URL with player's Kokimoki ID AND color
+	const qrCodeUrl = `${window.location.origin}/join?playerCode=${kmClient.id}&color=${playerColor}`;
 
 	const handleQrScan = async (scannedData: string) => {
 		try {
-			// Parse the scanned data to extract playerCode
-			// Expected format: URL with ?playerCode=xxx or just the clientId
+			// Parse the scanned data to extract playerCode and color
 			let scannedClientId = scannedData;
+			let scannedColor: string | null = null;
 
-			// If it's a URL, extract the playerCode parameter
+			// If it's a URL, extract the parameters
 			if (scannedData.includes('playerCode=')) {
 				const url = new URL(scannedData);
 				scannedClientId = url.searchParams.get('playerCode') || scannedData;
+				scannedColor = url.searchParams.get('color');
+			}
+
+			// Validate: both players must have the same color
+			if (scannedColor && scannedColor !== playerColor) {
+				setFeedbackType('error');
+				setFeedback(
+					`Wrong color! They are ${colorNames[scannedColor as ColorName] || scannedColor}, you are ${colorNames[playerColor]}`
+				);
+				setTimeout(() => setFeedback(null), 3000);
+				setShowScanner(false);
+				return;
+			}
+
+			// Don't connect to yourself
+			if (scannedClientId === kmClient.id) {
+				setFeedbackType('info');
+				setFeedback("That's your own QR code!");
+				setTimeout(() => setFeedback(null), 2000);
+				setShowScanner(false);
+				return;
 			}
 
 			// Try to join the faction
@@ -81,7 +102,8 @@ export const ColorSortingView: React.FC = () => {
 
 			// Clear feedback after 2 seconds
 			setTimeout(() => setFeedback(null), 2000);
-		} catch {
+		} catch (err) {
+			console.error('QR scan error:', err);
 			setFeedbackType('error');
 			setFeedback('Failed to connect. Try again.');
 			setTimeout(() => setFeedback(null), 2000);

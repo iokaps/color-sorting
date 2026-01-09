@@ -8,6 +8,16 @@ import {
 
 export const colorActions = {
 	/**
+	 * Clear all edges and players from a color faction (called at start of each round)
+	 */
+	async clearFaction(store: KokimokiStore<ColorFactionState>): Promise<void> {
+		await kmClient.transact([store], ([state]) => {
+			state.edges = {};
+			state.players = {};
+		});
+	},
+
+	/**
 	 * Join a player to the color faction by creating an edge between scanner and scanned
 	 */
 	async joinColorFaction(

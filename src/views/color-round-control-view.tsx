@@ -5,7 +5,7 @@ import { roundActions } from '@/state/actions/round-actions';
 import { globalStore } from '@/state/stores/global-store';
 import { useSnapshot } from '@kokimoki/app';
 import { KmTimeCountdown } from '@kokimoki/shared';
-import { CirclePlay, CircleStop } from 'lucide-react';
+import { CirclePlay, CircleStop, Users } from 'lucide-react';
 import * as React from 'react';
 
 export const ColorRoundControlView: React.FC = () => {
@@ -14,10 +14,19 @@ export const ColorRoundControlView: React.FC = () => {
 		totalRounds,
 		roundStartTimestamp,
 		roundActive,
-		roundDurationSeconds
+		roundDurationSeconds,
+		playerColors
 	} = useSnapshot(globalStore.proxy);
+	const connections = useSnapshot(globalStore.connections);
 	const [buttonCooldown, setButtonCooldown] = React.useState(false);
 	const serverTime = useServerTimer();
+
+	// Count online players with colors vs total online
+	const onlinePlayerIds = Array.from(connections.clientIds);
+	const playersWithColors = onlinePlayerIds.filter(
+		(id) => playerColors[id]
+	).length;
+	const totalOnline = onlinePlayerIds.length;
 
 	// Calculate elapsed time in round
 	const elapsedMs = Math.max(0, serverTime - roundStartTimestamp);
@@ -60,6 +69,19 @@ export const ColorRoundControlView: React.FC = () => {
 
 	return (
 		<div className="flex flex-col items-center justify-center space-y-8 p-6">
+			{/* Connected players count */}
+			<div className="flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-2">
+				<Users className="size-5 text-blue-600" />
+				<span className="text-lg font-semibold text-blue-900">
+					{totalOnline} {config.players}
+					{roundActive && playersWithColors < totalOnline && (
+						<span className="ml-2 text-sm font-normal text-amber-600">
+							({totalOnline - playersWithColors} waiting for color)
+						</span>
+					)}
+				</span>
+			</div>
+
 			{/* Round info */}
 			<div className="text-center">
 				<p className="text-sm text-slate-600">

@@ -18,13 +18,18 @@ const COLORS: ColorName[] = ['red', 'blue', 'green', 'yellow'];
  * @returns A boolean indicating if the current client is the global controller
  */
 export function useGlobalController() {
-	const { controllerConnectionId, roundActive, roundStartTimestamp } =
-		useSnapshot(globalStore.proxy);
+	const {
+		controllerConnectionId,
+		roundActive,
+		roundStartTimestamp,
+		roundNumber
+	} = useSnapshot(globalStore.proxy);
 	const connections = useSnapshot(globalStore.connections);
 	const connectionIds = connections.connectionIds;
 	const isGlobalController = controllerConnectionId === kmClient.connectionId;
 	const serverTime = useServerTimer(1000); // tick every second
 	const roundEndedRef = useRef(false);
+	const lastRoundRef = useRef(0);
 	const colorStoresRef = useRef<
 		Partial<Record<ColorName, KokimokiStore<ColorFactionState>>>
 	>({});
@@ -46,6 +51,58 @@ export function useGlobalController() {
 			.then(() => {})
 			.catch(() => {});
 	}, [connectionIds, controllerConnectionId]);
+
+	// Clear color stores when a new round starts (global controller responsibility)
+	useEffect(() => {
+		if (!isGlobalController) return;
+		if (roundNumber <= lastRoundRef.current) return;
+
+		// New round started - clear all color stores
+		lastRoundRef.current = roundNumber;
+
+		const clearAllStores = async () => {
+			try {
+				// Join all color stores in parallel if not already joined
+				const storePromises = COLORS.map(async (color) => {
+					const storeName = getColorStoreName(color);
+					if (!colorStoresRef.current[color]) {
+						colorStoresRef.current[color] = kmClient.store<ColorFactionState>(
+							storeName,
+							createColorFactionState(),
+							false
+						);
+						try {
+							await kmClient.join(colorStoresRef.current[color]);
+						} catch (error) {
+							if (
+								error instanceof Error &&
+								!error.message?.includes('not found')
+							) {
+								console.warn(`Could not join store ${storeName}:`, error);
+							}
+						}
+					}
+					return colorStoresRef.current[color];
+				});
+
+				const stores = await Promise.all(storePromises);
+
+				// Clear all stores in parallel
+				await Promise.all(
+					stores.map((store) => {
+						if (store) {
+							return colorActions.clearFaction(store);
+						}
+						return Promise.resolve();
+					})
+				);
+			} catch (error) {
+				console.error('Error clearing color stores:', error);
+			}
+		};
+
+		clearAllStores();
+	}, [isGlobalController, roundNumber]);
 
 	// Run global controller-specific logic
 	useEffect(() => {
@@ -140,6 +197,52 @@ export function useGlobalController() {
 			roundEndedRef.current = false;
 		}
 	}, [isGlobalController, serverTime, roundActive, roundStartTimestamp]);
+
+	// Assign colors to late-joining players during active round
+	useEffect(() => {
+		if (!isGlobalController || !roundActive) return;
+
+		const assignColorToLateJoiners = async () => {
+			const playerColors = globalStore.proxy.playerColors;
+			const onlinePlayerIds = Array.from(connectionIds);
+
+			// Find players without color assignment
+			const playersWithoutColor = onlinePlayerIds.filter(
+				(id) => !playerColors[id]
+			);
+
+			if (playersWithoutColor.length === 0) return;
+
+			// Count current color assignments for balance
+			const colorCounts: Record<ColorName, number> = {
+				red: 0,
+				blue: 0,
+				green: 0,
+				yellow: 0
+			};
+
+			for (const color of Object.values(playerColors)) {
+				if (color) {
+					colorCounts[color]++;
+				}
+			}
+
+			// Assign colors to late joiners (pick least-used color)
+			await kmClient.transact([globalStore], ([globalState]) => {
+				for (const playerId of playersWithoutColor) {
+					// Find the color with fewest players
+					const bestColor = COLORS.reduce((best, color) =>
+						colorCounts[color] < colorCounts[best] ? color : best
+					);
+
+					globalState.playerColors[playerId] = bestColor;
+					colorCounts[bestColor]++;
+				}
+			});
+		};
+
+		assignColorToLateJoiners().catch(console.error);
+	}, [isGlobalController, roundActive, connectionIds]);
 
 	return isGlobalController;
 }
