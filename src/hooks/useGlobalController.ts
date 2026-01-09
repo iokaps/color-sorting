@@ -63,7 +63,7 @@ export function useGlobalController() {
 			if (elapsedMs >= roundDurationMs && !roundEndedRef.current) {
 				roundEndedRef.current = true;
 
-				// Calculate largest faction for each color
+				// Calculate largest faction for each color - PARALLELIZED
 				const calculateRoundResults = async () => {
 					const results: Record<ColorName, number> = {
 						red: 0,
@@ -73,8 +73,8 @@ export function useGlobalController() {
 					};
 
 					try {
-						// Get or create color stores and join them
-						for (const color of COLORS) {
+						// Join all color stores in parallel
+						const storePromises = COLORS.map(async (color) => {
 							const storeName = getColorStoreName(color);
 							if (!colorStoresRef.current[color]) {
 								colorStoresRef.current[color] =
@@ -83,11 +83,9 @@ export function useGlobalController() {
 										createColorFactionState(),
 										false
 									);
-								// Join the store to get synced state
 								try {
 									await kmClient.join(colorStoresRef.current[color]);
 								} catch (error) {
-									// Store might not exist yet, which is fine
 									if (
 										error instanceof Error &&
 										!error.message?.includes('not found')
@@ -96,11 +94,15 @@ export function useGlobalController() {
 									}
 								}
 							}
-							const store = colorStoresRef.current[color];
+							return { color, store: colorStoresRef.current[color] };
+						});
+
+						const stores = await Promise.all(storePromises);
+
+						// Calculate all faction sizes (synchronous now with iterative DFS)
+						for (const { color, store } of stores) {
 							if (store) {
-								const factionSize =
-									await colorActions.calculateLargestFaction(store);
-								results[color] = factionSize;
+								results[color] = colorActions.calculateLargestFaction(store);
 							}
 						}
 					} catch (error) {

@@ -37,10 +37,10 @@ export const ColorSortingView: React.FC = () => {
 		createColorFactionState()
 	);
 
-	// Get faction data
+	// Get faction data - use players count from centralized store
 	const factionState = useSnapshot(colorStore.proxy);
-	const connectedCount = factionState?.connections
-		? Object.keys(factionState.connections).length
+	const playerCount = factionState?.players
+		? Object.keys(factionState.players).length
 		: 0;
 
 	// Generate QR code URL with player's Kokimoki ID
@@ -69,7 +69,7 @@ export const ColorSortingView: React.FC = () => {
 				setFeedback(config.alreadyConnectedMd);
 			} else {
 				setFeedbackType('success');
-				setFeedback(`Connected! Group size: ${connectedCount + 1}`);
+				setFeedback(`Connected! Group size: ${playerCount + 1}`);
 			}
 
 			// Clear feedback after 2 seconds
@@ -105,14 +105,14 @@ export const ColorSortingView: React.FC = () => {
 				{isConnected && (
 					<div className="rounded-lg bg-blue-50 px-4 py-2 text-center sm:px-6 sm:py-3">
 						<p className="text-2xl font-bold text-blue-600 sm:text-3xl">
-							{connectedCount + 1}
+							{playerCount}
 						</p>
 						<p className="text-[10px] text-blue-700 sm:text-xs">
-							{connectedCount === 0
+							{playerCount <= 1
 								? 'Just you'
 								: config.connectedWithCountMd.replace(
 										'{count}',
-										connectedCount.toString()
+										(playerCount - 1).toString()
 									)}
 						</p>
 					</div>

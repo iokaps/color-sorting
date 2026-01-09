@@ -1,104 +1,129 @@
 import { kmClient } from '@/services/km-client';
 import type { KokimokiStore } from '@kokimoki/app';
-import type { ColorFactionState } from '../stores/color-store';
+import {
+	createEdgeKey,
+	parseEdgeKey,
+	type ColorFactionState
+} from '../stores/color-store';
 
 export const colorActions = {
+	/**
+	 * Join a player to the color faction by creating an edge between scanner and scanned
+	 */
 	async joinColorFaction(
 		store: KokimokiStore<ColorFactionState>,
 		scannedClientId: string
 	): Promise<{ success: boolean; alreadyConnected: boolean }> {
-		// Check if already connected
+		const currentPlayerId = kmClient.id;
+		const edgeKey = createEdgeKey(currentPlayerId, scannedClientId);
+
 		let alreadyConnected = false;
 		await kmClient.transact([store], ([state]) => {
-			if (state.connections[scannedClientId]) {
+			const now = kmClient.serverTimestamp();
+
+			// Register both players in the faction
+			if (!state.players[currentPlayerId]) {
+				state.players[currentPlayerId] = { joinedAt: now };
+			}
+			if (!state.players[scannedClientId]) {
+				state.players[scannedClientId] = { joinedAt: now };
+			}
+
+			// Add edge if not exists
+			if (state.edges[edgeKey]) {
 				alreadyConnected = true;
 			} else {
-				// Add player to faction
-				state.connections[scannedClientId] = {
-					joinedAt: kmClient.serverTimestamp()
-				};
+				state.edges[edgeKey] = now;
 			}
 		});
 
 		return { success: true, alreadyConnected };
 	},
 
-	async calculateLargestFaction(
-		store: KokimokiStore<ColorFactionState>
-	): Promise<number> {
-		// Get snapshot of current state with defensive check
-		const state = store.proxy;
-		if (!state || !state.connections) {
-			// If store not synced yet, assume 1 player (the one calling this)
-			return 1;
-		}
-
-		// Build adjacency graph from connections
-		// Each player has scanned other players, creating edges
-		const allPlayerIds = new Set<string>();
-		const adjacencyList = new Map<string, Set<string>>();
-
-		// Add the current player (kmClient.id)
+	/**
+	 * Register a player in the color faction (called when player gets assigned a color)
+	 */
+	async registerPlayer(store: KokimokiStore<ColorFactionState>): Promise<void> {
 		const currentPlayerId = kmClient.id;
-		allPlayerIds.add(currentPlayerId);
-		adjacencyList.set(currentPlayerId, new Set());
-
-		// Add all scanned players and build edges
-		for (const [scannedId, _] of Object.entries(state.connections)) {
-			allPlayerIds.add(scannedId);
-			if (!adjacencyList.has(scannedId)) {
-				adjacencyList.set(scannedId, new Set());
+		await kmClient.transact([store], ([state]) => {
+			if (!state.players[currentPlayerId]) {
+				state.players[currentPlayerId] = {
+					joinedAt: kmClient.serverTimestamp()
+				};
 			}
-			// Create bidirectional edges (if A scanned B, they're connected)
-			adjacencyList.get(currentPlayerId)?.add(scannedId);
-			adjacencyList.get(scannedId)?.add(currentPlayerId);
-		}
-
-		// Find all connected components using DFS
-		const visited = new Set<string>();
-		let largestComponentSize = 0;
-
-		for (const playerId of allPlayerIds) {
-			if (!visited.has(playerId)) {
-				// DFS to find component size
-				const componentSize = dfsComponentSize(
-					playerId,
-					adjacencyList,
-					visited
-				);
-				largestComponentSize = Math.max(largestComponentSize, componentSize);
-			}
-		}
-
-		return Math.max(1, largestComponentSize);
+		});
 	},
 
+	/**
+	 * Calculate the largest connected faction using iterative DFS (no stack overflow)
+	 * This reads from the centralized edges so any client gets the full graph
+	 */
+	calculateLargestFaction(store: KokimokiStore<ColorFactionState>): number {
+		const state = store.proxy;
+		if (!state?.edges || !state?.players) return 1;
+
+		// Build adjacency list from ALL edges (centralized graph)
+		const adjacencyList = new Map<string, Set<string>>();
+		const allPlayerIds = new Set(Object.keys(state.players));
+
+		// Process all edges to build the graph
+		for (const edgeKey of Object.keys(state.edges)) {
+			const [a, b] = parseEdgeKey(edgeKey);
+			allPlayerIds.add(a);
+			allPlayerIds.add(b);
+
+			if (!adjacencyList.has(a)) adjacencyList.set(a, new Set());
+			if (!adjacencyList.has(b)) adjacencyList.set(b, new Set());
+			adjacencyList.get(a)!.add(b);
+			adjacencyList.get(b)!.add(a);
+		}
+
+		// Find largest connected component using iterative DFS (prevents stack overflow)
+		const visited = new Set<string>();
+		let largestSize = 0;
+
+		for (const startId of allPlayerIds) {
+			if (visited.has(startId)) continue;
+
+			// Iterative DFS
+			const stack = [startId];
+			let componentSize = 0;
+
+			while (stack.length > 0) {
+				const node = stack.pop()!;
+				if (visited.has(node)) continue;
+				visited.add(node);
+				componentSize++;
+
+				for (const neighbor of adjacencyList.get(node) || []) {
+					if (!visited.has(neighbor)) stack.push(neighbor);
+				}
+			}
+
+			largestSize = Math.max(largestSize, componentSize);
+		}
+
+		return Math.max(1, largestSize);
+	},
+
+	/**
+	 * Get total player count in this color faction
+	 */
+	getPlayerCount(store: KokimokiStore<ColorFactionState>): number {
+		const state = store.proxy;
+		if (!state?.players) return 0;
+		return Object.keys(state.players).length;
+	},
+
+	/**
+	 * Reset color faction for new round
+	 */
 	async resetColorFaction(
 		store: KokimokiStore<ColorFactionState>
 	): Promise<void> {
 		await kmClient.transact([store], ([state]) => {
-			state.connections = {};
+			state.edges = {};
+			state.players = {};
 		});
 	}
 };
-
-/**
- * Helper function to calculate connected component size using DFS
- */
-function dfsComponentSize(
-	playerId: string,
-	adjacencyList: Map<string, Set<string>>,
-	visited: Set<string>
-): number {
-	visited.add(playerId);
-	let size = 1;
-
-	const neighbors = adjacencyList.get(playerId) || new Set();
-	for (const neighbor of neighbors) {
-		if (!visited.has(neighbor)) {
-			size += dfsComponentSize(neighbor, adjacencyList, visited);
-		}
-	}
-
-	return size;
-}

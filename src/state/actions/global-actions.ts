@@ -34,6 +34,12 @@ export const globalActions = {
 		});
 	},
 
+	async updateTotalRounds(totalRounds: number) {
+		await kmClient.transact([globalStore], ([globalState]) => {
+			globalState.totalRounds = Math.max(1, totalRounds);
+		});
+	},
+
 	async updateLogoUrl(logoUrl: string | null) {
 		await kmClient.transact([globalStore], ([globalState]) => {
 			globalState.logoUrl = logoUrl;

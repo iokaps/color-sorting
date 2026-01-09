@@ -6,6 +6,57 @@ import { colorActions } from './color-actions';
 
 const COLORS: ColorName[] = ['red', 'blue', 'green', 'yellow'];
 
+/**
+ * Fisher-Yates shuffle for unbiased randomization (O(n) time, O(1) extra space)
+ */
+function shuffleArray<T>(array: T[]): T[] {
+	const shuffled = [...array];
+	for (let i = shuffled.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+	}
+	return shuffled;
+}
+
+/**
+ * Assigns colors to players ensuring:
+ * 1. Equal distribution (within ±1 player per color)
+ * 2. No player gets the same color as previous round
+ */
+function assignColorsWithConstraints(
+	playerIds: string[],
+	previousColors: Record<string, ColorName>
+): Record<string, ColorName> {
+	const shuffledPlayers = shuffleArray(playerIds);
+	const newColors: Record<string, ColorName> = {};
+	const colorCounts: Record<ColorName, number> = {
+		red: 0,
+		blue: 0,
+		green: 0,
+		yellow: 0
+	};
+
+	// For each player, assign the least-used color that's different from their previous
+	for (const playerId of shuffledPlayers) {
+		const previousColor = previousColors[playerId];
+
+		// Get available colors (exclude previous color if they had one)
+		const availableColors = previousColor
+			? COLORS.filter((c) => c !== previousColor)
+			: COLORS;
+
+		// Pick the color with the fewest assignments (maintains balance)
+		const bestColor = availableColors.reduce((best, color) =>
+			colorCounts[color] < colorCounts[best] ? color : best
+		);
+
+		newColors[playerId] = bestColor;
+		colorCounts[bestColor]++;
+	}
+
+	return newColors;
+}
+
 export const roundActions = {
 	async assignColorsAndStartRound() {
 		// Assign colors to players
@@ -17,17 +68,16 @@ export const roundActions = {
 			globalState.roundResults = { red: 0, blue: 0, green: 0, yellow: 0 };
 			globalState.gameComplete = false;
 
-			// Assign colors equally to players
-			const playersPerColor = Math.ceil(onlinePlayerIds.length / COLORS.length);
-			const shuffledPlayerIds = [...onlinePlayerIds].sort(
-				() => Math.random() - 0.5
-			);
+			// Store previous colors before reassignment
+			const previousColors = { ...globalState.playerColors };
 
-			globalState.playerColors = {};
-			shuffledPlayerIds.forEach((playerId, index) => {
-				const colorIndex = Math.floor(index / playersPerColor) % COLORS.length;
-				globalState.playerColors[playerId] = COLORS[colorIndex];
-			});
+			// Assign colors with constraints:
+			// - Equal distribution (within ±1)
+			// - Different color from previous round
+			globalState.playerColors = assignColorsWithConstraints(
+				onlinePlayerIds,
+				previousColors
+			);
 
 			// Initialize round state
 			globalState.roundNumber += 1;
@@ -39,7 +89,7 @@ export const roundActions = {
 	async endRound(
 		colorStores: Record<ColorName, KokimokiStore<ColorFactionState>>
 	) {
-		// Calculate largest faction size for each color
+		// Calculate largest faction size for each color (synchronous with iterative DFS)
 		const results: Record<ColorName, number> = {
 			red: 0,
 			blue: 0,
@@ -50,8 +100,8 @@ export const roundActions = {
 		for (const color of COLORS) {
 			const store = colorStores[color];
 			if (store) {
-				const factionSize = await colorActions.calculateLargestFaction(store);
-				results[color] = factionSize;
+				// calculateLargestFaction is now synchronous
+				results[color] = colorActions.calculateLargestFaction(store);
 			}
 		}
 

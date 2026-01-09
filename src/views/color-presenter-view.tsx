@@ -1,5 +1,6 @@
 import { useDynamicStore } from '@/hooks/useDynamicStore';
 import { useServerTimer } from '@/hooks/useServerTime';
+import { colorActions } from '@/state/actions/color-actions';
 import {
 	createColorFactionState,
 	getColorStoreName,
@@ -39,14 +40,6 @@ export const ColorPresenterView: React.FC = () => {
 	} = useSnapshot(globalStore.proxy);
 	const serverTime = useServerTimer(250); // Update timer every 250ms for smooth display
 	const confetti = useKmConfettiContext();
-	const [factionCounts, setFactionCounts] = React.useState<
-		Record<ColorName, number>
-	>({
-		red: 0,
-		blue: 0,
-		green: 0,
-		yellow: 0
-	});
 	const [confettiTriggered, setConfettiTriggered] = React.useState(false);
 
 	// Calculate elapsed time and remaining time
@@ -77,38 +70,50 @@ export const ColorPresenterView: React.FC = () => {
 	const snapshotGreen = useSnapshot(storeGreen.proxy);
 	const snapshotYellow = useSnapshot(storeYellow.proxy);
 
-	const colorSnapshots: Record<ColorName, ColorFactionState> = React.useMemo(
+	// Memoize color stores map for faction calculation
+	const colorStores = React.useMemo(
 		() => ({
-			red: snapshotRed,
-			blue: snapshotBlue,
-			green: snapshotGreen,
-			yellow: snapshotYellow
+			red: storeRed,
+			blue: storeBlue,
+			green: storeGreen,
+			yellow: storeYellow
 		}),
-		[snapshotRed, snapshotBlue, snapshotGreen, snapshotYellow]
+		[storeRed, storeBlue, storeGreen, storeYellow]
 	);
 
-	// Update faction counts when snapshots change
-	React.useEffect(() => {
-		const newCounts: Record<ColorName, number> = {
+	// Memoize faction counts - only recalculate when snapshots change
+	const factionCounts = React.useMemo(() => {
+		const counts: Record<ColorName, number> = {
 			red: 0,
 			blue: 0,
 			green: 0,
 			yellow: 0
 		};
 
+		// Use snapshots to get player counts (triggers reactivity)
+		const snapshots: Record<ColorName, ColorFactionState> = {
+			red: snapshotRed,
+			blue: snapshotBlue,
+			green: snapshotGreen,
+			yellow: snapshotYellow
+		};
+
 		for (const color of COLORS) {
-			const snapshot = colorSnapshots[color];
-			if (snapshot?.connections) {
-				// Count is connections + 1 (for at least one person in the faction)
-				newCounts[color] = Math.max(
-					1,
-					Object.keys(snapshot.connections).length + 1
-				);
+			const snapshot = snapshots[color];
+			if (snapshot?.players) {
+				// Use player count from centralized store
+				counts[color] = Object.keys(snapshot.players).length;
+			}
+			// Also calculate largest faction for more accurate display
+			const store = colorStores[color];
+			if (store) {
+				const largestFaction = colorActions.calculateLargestFaction(store);
+				counts[color] = Math.max(counts[color], largestFaction);
 			}
 		}
 
-		setFactionCounts(newCounts);
-	}, [colorSnapshots]);
+		return counts;
+	}, [snapshotRed, snapshotBlue, snapshotGreen, snapshotYellow, colorStores]);
 
 	// Trigger confetti when round ends
 	React.useEffect(() => {

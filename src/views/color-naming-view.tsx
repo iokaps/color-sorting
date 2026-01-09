@@ -17,13 +17,13 @@ const COLOR_CLASSES: Record<ColorName, string> = {
 };
 
 export const ColorNamingView: React.FC = () => {
-	const { colorNames, roundDurationSeconds, logoUrl } = useSnapshot(
-		globalStore.proxy
-	);
+	const { colorNames, roundDurationSeconds, logoUrl, totalRounds } =
+		useSnapshot(globalStore.proxy);
 	const [editedNames, setEditedNames] =
 		React.useState<Record<ColorName, string>>(colorNames);
 	const [editedDuration, setEditedDuration] =
 		React.useState(roundDurationSeconds);
+	const [editedTotalRounds, setEditedTotalRounds] = React.useState(totalRounds);
 	const [logoFile, setLogoFile] = React.useState<File | null>(null);
 	const [logoPreview, setLogoPreview] = React.useState<string | null>(logoUrl);
 	const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -33,8 +33,9 @@ export const ColorNamingView: React.FC = () => {
 	React.useEffect(() => {
 		setEditedNames(colorNames);
 		setEditedDuration(roundDurationSeconds);
+		setEditedTotalRounds(totalRounds);
 		setLogoPreview(logoUrl);
-	}, [colorNames, roundDurationSeconds, logoUrl]);
+	}, [colorNames, roundDurationSeconds, totalRounds, logoUrl]);
 
 	const handleNameChange = (color: ColorName, name: string) => {
 		setEditedNames((prev) => ({
@@ -76,6 +77,11 @@ export const ColorNamingView: React.FC = () => {
 			// Update round duration if changed
 			if (editedDuration !== roundDurationSeconds) {
 				await globalActions.updateRoundDuration(editedDuration);
+			}
+
+			// Update total rounds if changed
+			if (editedTotalRounds !== totalRounds) {
+				await globalActions.updateTotalRounds(editedTotalRounds);
 			}
 
 			// Upload logo if a new file was selected
@@ -156,6 +162,36 @@ export const ColorNamingView: React.FC = () => {
 					className="km-input mt-2"
 					disabled={isSubmitting}
 				/>
+			</div>
+
+			{/* Total Rounds Section */}
+			<div className="rounded-xl border border-slate-300 bg-white p-6">
+				<label htmlFor="total-rounds" className="block text-sm font-medium">
+					{config.totalRoundsLabel}
+				</label>
+				<div className="mt-2 flex items-center gap-3">
+					<button
+						type="button"
+						className="km-btn-secondary h-12 w-12 text-xl font-bold"
+						onClick={() =>
+							setEditedTotalRounds((prev) => Math.max(1, prev - 1))
+						}
+						disabled={isSubmitting || editedTotalRounds <= 1}
+					>
+						−
+					</button>
+					<span className="w-16 text-center text-2xl font-bold">
+						{editedTotalRounds}
+					</span>
+					<button
+						type="button"
+						className="km-btn-secondary h-12 w-12 text-xl font-bold"
+						onClick={() => setEditedTotalRounds((prev) => prev + 1)}
+						disabled={isSubmitting || editedTotalRounds >= 20}
+					>
+						+
+					</button>
+				</div>
 			</div>
 
 			{/* Logo Upload Section */}
