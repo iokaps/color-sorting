@@ -1,4 +1,5 @@
 import { useDynamicStore } from '@/hooks/useDynamicStore';
+import { useServerTimer } from '@/hooks/useServerTime';
 import {
 	createColorFactionState,
 	getColorStoreName,
@@ -6,13 +7,14 @@ import {
 } from '@/state/stores/color-store';
 import { globalStore, type ColorName } from '@/state/stores/global-store';
 import { useSnapshot } from '@kokimoki/app';
+import { KmTimeCountdown, useKmConfettiContext } from '@kokimoki/shared';
 import * as React from 'react';
 
 const COLOR_CLASSES: Record<ColorName, string> = {
-	red: 'bg-red-500',
-	blue: 'bg-blue-500',
-	green: 'bg-green-500',
-	yellow: 'bg-yellow-400'
+	red: 'bg-rose-600',
+	blue: 'bg-blue-700',
+	green: 'bg-emerald-600',
+	yellow: 'bg-amber-600'
 };
 
 const COLOR_EMOJIS: Record<ColorName, string> = {
@@ -26,7 +28,17 @@ const COLORS: ColorName[] = ['red', 'blue', 'green', 'yellow'];
 
 export const ColorPresenterView: React.FC = () => {
 	// Create dynamic stores for each color and track faction counts
-	const { colorNames, logoUrl } = useSnapshot(globalStore.proxy);
+	const {
+		colorNames,
+		logoUrl,
+		roundNumber,
+		roundStartTimestamp,
+		roundActive,
+		roundDurationSeconds,
+		roundResults
+	} = useSnapshot(globalStore.proxy);
+	const serverTime = useServerTimer(250); // Update timer every 250ms for smooth display
+	const confetti = useKmConfettiContext();
 	const [factionCounts, setFactionCounts] = React.useState<
 		Record<ColorName, number>
 	>({
@@ -35,6 +47,12 @@ export const ColorPresenterView: React.FC = () => {
 		green: 0,
 		yellow: 0
 	});
+	const [confettiTriggered, setConfettiTriggered] = React.useState(false);
+
+	// Calculate elapsed time and remaining time
+	const elapsedMs = Math.max(0, serverTime - roundStartTimestamp);
+	const roundDurationMs = (roundDurationSeconds || 90) * 1000;
+	const remainingMs = Math.max(0, roundDurationMs - elapsedMs);
 
 	// Join all 4 color faction stores - call hooks outside loop
 	const { store: storeRed } = useDynamicStore(
@@ -92,12 +110,49 @@ export const ColorPresenterView: React.FC = () => {
 		setFactionCounts(newCounts);
 	}, [colorSnapshots]);
 
+	// Trigger confetti when round ends
+	React.useEffect(() => {
+		if (roundActive || confettiTriggered) {
+			// Reset confetti flag when round becomes active
+			if (roundActive) {
+				setConfettiTriggered(false);
+			}
+			return;
+		}
+
+		// Check if we have results
+		const hasResults = Object.values(roundResults).some((count) => count > 0);
+
+		if (confetti && !confettiTriggered && hasResults) {
+			setConfettiTriggered(true);
+			// Use 'massive' preset for bigger celebration on presenter screen
+			confetti.triggerConfetti({ preset: 'massive' });
+		}
+	}, [roundActive, confetti, confettiTriggered, roundResults]);
+
 	return (
 		<div className="flex h-full flex-col items-center justify-center space-y-12 p-8">
 			{/* Logo display */}
-			{logoUrl && (
+			{logoUrl && logoUrl.length > 0 && (
 				<div className="mb-4">
 					<img src={logoUrl} alt="Event logo" className="h-32 object-contain" />
+				</div>
+			)}
+
+			{/* Round info and timer */}
+			{roundActive && (
+				<div className="rounded-2xl bg-blue-50 px-8 py-6 text-center">
+					<p className="text-lg font-semibold text-blue-900">
+						Round {roundNumber}
+					</p>
+					<p className="mt-2 text-5xl font-bold text-blue-600">
+						<KmTimeCountdown ms={remainingMs} />
+					</p>
+					{remainingMs < 10000 && (
+						<p className="animate-pulse text-lg font-semibold text-red-600">
+							Almost time!
+						</p>
+					)}
 				</div>
 			)}
 
@@ -128,11 +183,11 @@ export const ColorPresenterView: React.FC = () => {
 			</div>
 
 			{/* Summary */}
-			<div className="text-center">
-				<p className="text-lg text-slate-600">
-					Total connected:{' '}
+			<div className="rounded-2xl bg-slate-100 px-8 py-6 text-center">
+				<p className="text-2xl font-bold text-slate-900">
 					{Object.values(factionCounts).reduce((a, b) => a + b, 0)}
 				</p>
+				<p className="text-lg text-slate-600">Total connected</p>
 			</div>
 		</div>
 	);

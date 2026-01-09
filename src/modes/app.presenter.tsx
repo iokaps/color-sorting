@@ -1,3 +1,4 @@
+import { withKmProviders } from '@/components/with-km-providers';
 import { config } from '@/config';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useGlobalController } from '@/hooks/useGlobalController';
@@ -55,4 +56,4 @@ const App: React.FC = () => {
 	);
 };
 
-export default App;
+export default withKmProviders(App);

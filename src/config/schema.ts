@@ -55,10 +55,10 @@ export const schema = z.object({
 	connectedWithCountMd: z.string().default('Connected with {count} others'),
 	alreadyConnectedMd: z.string().default('Already connected to this player'),
 	scanQrCodeButton: z.string().default('Scan QR Code'),
-	colorRed: z.string().default('Red'),
-	colorBlue: z.string().default('Blue'),
-	colorGreen: z.string().default('Green'),
-	colorYellow: z.string().default('Yellow'),
+	colorRed: z.string().default('Ruby'),
+	colorBlue: z.string().default('Sapphire'),
+	colorGreen: z.string().default('Emerald'),
+	colorYellow: z.string().default('Gold'),
 	roundDurationSeconds: z.number().default(90),
 	winnerAnnouncement: z
 		.string()

@@ -31,8 +31,8 @@ export const CreateProfileView: React.FC<Props> = () => {
 	};
 
 	return (
-		<div className="mx-auto w-full max-w-96 space-y-12">
-			<article className="prose text-center">
+		<div className="w-full max-w-sm space-y-8 px-4 sm:space-y-12">
+			<article className="prose prose-sm sm:prose text-center">
 				<Markdown>{config.createProfileMd}</Markdown>
 			</article>
 			<form onSubmit={handleSubmit} className="grid gap-4">
@@ -44,12 +44,12 @@ export const CreateProfileView: React.FC<Props> = () => {
 					disabled={isLoading}
 					autoFocus
 					maxLength={50}
-					className="km-input"
+					className="km-input h-12"
 				/>
 
 				<button
 					type="submit"
-					className="km-btn-primary w-full"
+					className="km-btn-primary h-12 w-full font-semibold"
 					disabled={!name.trim() || isLoading}
 				>
 					{isLoading ? (

@@ -32,6 +32,13 @@ const App: React.FC = () => {
 		return () => clearTimeout(timeout);
 	}, [started]);
 
+	// Close color naming view when game starts
+	React.useEffect(() => {
+		if (started) {
+			setShowColorNaming(false);
+		}
+	}, [started]);
+
 	if (kmClient.clientContext.mode !== 'host') {
 		throw new Error('App host rendered in non-host mode');
 	}

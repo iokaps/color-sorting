@@ -62,12 +62,11 @@ export const DevFrame: FC<Props> = ({ clientKey, context }) => {
 					Reset
 				</button>
 			</div>
-
 			<iframe
 				ref={iframeRef}
 				className="h-full w-full"
 				title={clientKey}
-				src={link}
+				src={link || undefined}
 			/>
 		</div>
 	);

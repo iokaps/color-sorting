@@ -10,10 +10,10 @@ import ReactMarkdown from 'react-markdown';
 const COLORS: ColorName[] = ['red', 'blue', 'green', 'yellow'];
 
 const COLOR_CLASSES: Record<ColorName, string> = {
-	red: 'bg-red-500',
-	blue: 'bg-blue-500',
-	green: 'bg-green-500',
-	yellow: 'bg-yellow-500'
+	red: 'bg-rose-600',
+	blue: 'bg-blue-700',
+	green: 'bg-emerald-600',
+	yellow: 'bg-amber-600'
 };
 
 export const ColorNamingView: React.FC = () => {
@@ -169,7 +169,7 @@ export const ColorNamingView: React.FC = () => {
 					type="file"
 					accept="image/*"
 					onChange={handleLogoSelect}
-					className="mt-2"
+					className="mt-2 block w-full text-sm"
 					disabled={isSubmitting}
 				/>
 

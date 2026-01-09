@@ -34,7 +34,10 @@ const PlayerHeader: React.FC<LayoutProps> = ({ children, className }) => (
 
 const PlayerMain: React.FC<LayoutProps> = ({ children, className }) => (
 	<main
-		className={cn('container mx-auto flex items-center px-4 py-16', className)}
+		className={cn(
+			'flex w-full flex-col items-center justify-center overflow-y-auto px-3 py-8 sm:px-4 sm:py-16',
+			className
+		)}
 	>
 		{children}
 	</main>

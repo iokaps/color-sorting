@@ -15,10 +15,10 @@ import * as React from 'react';
 import Markdown from 'react-markdown';
 
 const COLOR_CLASSES: Record<ColorName, string> = {
-	red: 'bg-red-500',
-	blue: 'bg-blue-500',
-	green: 'bg-green-500',
-	yellow: 'bg-yellow-400'
+	red: 'bg-rose-600',
+	blue: 'bg-blue-700',
+	green: 'bg-emerald-600',
+	yellow: 'bg-amber-600'
 };
 
 export const ColorSortingView: React.FC = () => {
@@ -40,7 +40,9 @@ export const ColorSortingView: React.FC = () => {
 
 	// Get faction data
 	const factionState = useSnapshot(colorStore.proxy);
-	const connectedCount = Object.keys(factionState.connections).length;
+	const connectedCount = factionState?.connections
+		? Object.keys(factionState.connections).length
+		: 0;
 
 	// Generate QR code URL with player's Kokimoki ID
 	const qrCodeUrl = `${window.location.origin}/join?playerCode=${kmClient.id}`;
@@ -82,7 +84,7 @@ export const ColorSortingView: React.FC = () => {
 		setShowScanner(false);
 	};
 
-	if (!playerColor || !roundActive) {
+	if (!playerColor || !roundActive || !isConnected) {
 		return (
 			<div className="flex h-full flex-col items-center justify-center">
 				<p className="text-lg">{config.loading}</p>
@@ -91,23 +93,23 @@ export const ColorSortingView: React.FC = () => {
 	}
 
 	return (
-		<div className="flex h-full flex-col items-center justify-center space-y-6 p-4">
+		<div className="flex h-full w-full flex-col items-center justify-center gap-4 overflow-y-auto px-3 py-4 sm:gap-6 sm:px-4 sm:py-6">
 			{/* Color reference card */}
 			<div
-				className={`flex h-20 w-20 items-center justify-center rounded-2xl shadow-lg ${COLOR_CLASSES[playerColor]}`}
+				className={`flex h-16 w-16 items-center justify-center rounded-xl shadow-lg sm:h-20 sm:w-20 sm:rounded-2xl ${COLOR_CLASSES[playerColor]}`}
 			>
-				<p className="text-sm font-bold text-white">
+				<p className="text-xs font-bold text-white sm:text-sm">
 					{colorNames[playerColor]}
 				</p>
 			</div>
 
 			{/* Group size display */}
 			{isConnected && (
-				<div className="rounded-xl bg-blue-50 p-6 text-center">
-					<p className="text-4xl font-bold text-blue-600">
+				<div className="rounded-lg bg-blue-50 p-4 text-center sm:rounded-xl sm:p-6">
+					<p className="text-3xl font-bold text-blue-600 sm:text-4xl">
 						{connectedCount + 1}
 					</p>
-					<p className="text-sm text-blue-700">
+					<p className="text-xs text-blue-700 sm:text-sm">
 						{connectedCount === 0
 							? 'Just you'
 							: config.connectedWithCountMd.replace(
@@ -119,24 +121,24 @@ export const ColorSortingView: React.FC = () => {
 			)}
 
 			{/* Instructions */}
-			<div className="prose text-center">
+			<div className="prose prose-sm sm:prose w-full max-w-sm text-center">
 				<Markdown>{config.colorSortingInstructionsMd}</Markdown>
 			</div>
 
 			{/* QR Code section */}
-			<div className="space-y-4 rounded-xl bg-slate-50 p-6">
-				<p className="text-center text-sm font-medium text-slate-600">
+			<div className="w-full max-w-xs space-y-3 rounded-lg bg-slate-50 p-4 sm:max-w-sm sm:space-y-4 sm:rounded-xl sm:p-6">
+				<p className="text-center text-xs font-medium text-slate-600 sm:text-sm">
 					Others scan this code
 				</p>
 				<div className="flex justify-center">
-					<KmQrCode data={qrCodeUrl} size={200} />
+					<KmQrCode data={qrCodeUrl} size={160} />
 				</div>
 			</div>
 
 			{/* Scan button */}
 			<button
 				type="button"
-				className="km-btn-primary"
+				className="km-btn-primary h-12 w-full max-w-xs sm:max-w-sm"
 				onClick={() => setShowScanner(true)}
 			>
 				<Scan className="size-5" />
@@ -146,7 +148,7 @@ export const ColorSortingView: React.FC = () => {
 			{/* Feedback message */}
 			{feedback && (
 				<div
-					className={`rounded-xl p-4 text-center ${
+					className={`w-full max-w-xs rounded-lg p-3 text-center text-sm sm:max-w-sm sm:rounded-xl sm:p-4 ${
 						feedbackType === 'success'
 							? 'bg-green-100 text-green-900'
 							: feedbackType === 'error'

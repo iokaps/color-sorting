@@ -1,13 +1,14 @@
-import { useDynamicStore } from '@/hooks/useDynamicStore';
 import { kmClient } from '@/services/km-client';
 import { colorActions } from '@/state/actions/color-actions';
 import {
 	createColorFactionState,
-	getColorStoreName
+	getColorStoreName,
+	type ColorFactionState
 } from '@/state/stores/color-store';
 import { globalStore, type ColorName } from '@/state/stores/global-store';
+import type { KokimokiStore } from '@kokimoki/app';
 import { useSnapshot } from '@kokimoki/app';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useServerTimer } from './useServerTime';
 
 const COLORS: ColorName[] = ['red', 'blue', 'green', 'yellow'];
@@ -24,39 +25,9 @@ export function useGlobalController() {
 	const isGlobalController = controllerConnectionId === kmClient.connectionId;
 	const serverTime = useServerTimer(1000); // tick every second
 	const roundEndedRef = useRef(false);
-
-	// Get or create dynamic stores for each color - only call hooks outside loop
-	const colorStoreRed = useDynamicStore(
-		getColorStoreName('red'),
-		createColorFactionState()
-	);
-	const colorStoreBlue = useDynamicStore(
-		getColorStoreName('blue'),
-		createColorFactionState()
-	);
-	const colorStoreGreen = useDynamicStore(
-		getColorStoreName('green'),
-		createColorFactionState()
-	);
-	const colorStoreYellow = useDynamicStore(
-		getColorStoreName('yellow'),
-		createColorFactionState()
-	);
-
-	const colorStores = useMemo(
-		() => ({
-			red: colorStoreRed.store,
-			blue: colorStoreBlue.store,
-			green: colorStoreGreen.store,
-			yellow: colorStoreYellow.store
-		}),
-		[
-			colorStoreRed.store,
-			colorStoreBlue.store,
-			colorStoreGreen.store,
-			colorStoreYellow.store
-		]
-	);
+	const colorStoresRef = useRef<
+		Partial<Record<ColorName, KokimokiStore<ColorFactionState>>>
+	>({});
 
 	// Maintain connection that is assigned to be the global controller
 	useEffect(() => {
@@ -101,13 +72,39 @@ export function useGlobalController() {
 						yellow: 0
 					};
 
-					for (const color of COLORS) {
-						const store = colorStores[color];
-						if (store) {
-							const factionSize =
-								await colorActions.calculateLargestFaction(store);
-							results[color] = factionSize;
+					try {
+						// Get or create color stores and join them
+						for (const color of COLORS) {
+							const storeName = getColorStoreName(color);
+							if (!colorStoresRef.current[color]) {
+								colorStoresRef.current[color] =
+									kmClient.store<ColorFactionState>(
+										storeName,
+										createColorFactionState(),
+										false
+									);
+								// Join the store to get synced state
+								try {
+									await kmClient.join(colorStoresRef.current[color]);
+								} catch (error) {
+									// Store might not exist yet, which is fine
+									if (
+										error instanceof Error &&
+										!error.message?.includes('not found')
+									) {
+										console.warn(`Could not join store ${storeName}:`, error);
+									}
+								}
+							}
+							const store = colorStoresRef.current[color];
+							if (store) {
+								const factionSize =
+									await colorActions.calculateLargestFaction(store);
+								results[color] = factionSize;
+							}
 						}
+					} catch (error) {
+						console.error('Error calculating round results:', error);
 					}
 
 					// Update global state with results and end the round
@@ -123,13 +120,7 @@ export function useGlobalController() {
 			// Reset flag when round ends
 			roundEndedRef.current = false;
 		}
-	}, [
-		isGlobalController,
-		serverTime,
-		roundActive,
-		roundStartTimestamp,
-		colorStores
-	]);
+	}, [isGlobalController, serverTime, roundActive, roundStartTimestamp]);
 
 	return isGlobalController;
 }

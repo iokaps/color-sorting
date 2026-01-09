@@ -36,7 +36,7 @@ const App: React.FC = () => {
 		if (!started) {
 			playerActions.setCurrentView('lobby');
 		} else if (!hasColorAssignment) {
-			playerActions.setCurrentView('lobby');
+			playerActions.setCurrentView('assignment');
 		} else if (roundActive) {
 			playerActions.setCurrentView('sorting');
 		} else if (roundNumber > 0) {
@@ -84,9 +84,6 @@ const App: React.FC = () => {
 				{hasColorAssignment && roundActive && <ColorSortingView />}
 				{hasColorAssignment && !roundActive && roundNumber > 0 && (
 					<ColorResultsView />
-				)}
-				{!roundActive && !hasColorAssignment && roundNumber === 0 && (
-					<ColorAssignmentView />
 				)}
 			</PlayerLayout.Main>
 

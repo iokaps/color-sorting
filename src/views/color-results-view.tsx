@@ -3,14 +3,15 @@ import { kmClient } from '@/services/km-client';
 import { roundActions } from '@/state/actions/round-actions';
 import { globalStore, type ColorName } from '@/state/stores/global-store';
 import { useSnapshot } from '@kokimoki/app';
+import { useKmConfettiContext } from '@kokimoki/shared';
 import { CircleArrowRight } from 'lucide-react';
 import * as React from 'react';
 
 const COLOR_CLASSES: Record<ColorName, string> = {
-	red: 'bg-red-500',
-	blue: 'bg-blue-500',
-	green: 'bg-green-500',
-	yellow: 'bg-yellow-400'
+	red: 'bg-rose-600',
+	blue: 'bg-blue-700',
+	green: 'bg-emerald-600',
+	yellow: 'bg-amber-600'
 };
 
 const COLOR_EMOJIS: Record<ColorName, string> = {
@@ -28,12 +29,21 @@ export const ColorResultsView: React.FC = () => {
 	);
 	const isHost = kmClient.clientContext.mode === 'host';
 	const [buttonCooldown, setButtonCooldown] = React.useState(false);
+	const confetti = useKmConfettiContext();
 
 	// Find winning color
 	const winningColor = COLORS.reduce((prev, curr) =>
 		roundResults[curr] > roundResults[prev] ? curr : prev
 	);
 	const winningCount = roundResults[winningColor];
+
+	// Trigger confetti on mount
+	React.useEffect(() => {
+		if (confetti) {
+			// Use 'standard' preset for player results view
+			confetti.triggerConfetti({ preset: 'standard' });
+		}
+	}, [confetti]);
 
 	// Button cooldown
 	React.useEffect(() => {
@@ -55,12 +65,12 @@ export const ColorResultsView: React.FC = () => {
 	};
 
 	return (
-		<div className="flex h-full flex-col items-center justify-center space-y-8 overflow-auto p-6">
+		<div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-auto px-3 py-6 sm:gap-8 sm:px-4 sm:py-8">
 			{/* Winner announcement */}
 			<div
-				className={`rounded-3xl px-12 py-8 shadow-2xl ${COLOR_CLASSES[winningColor]}`}
+				className={`w-full max-w-xl rounded-2xl px-4 py-6 shadow-2xl sm:rounded-3xl sm:px-8 sm:py-8 ${COLOR_CLASSES[winningColor]}`}
 			>
-				<p className="text-6xl">
+				<p className="text-center text-2xl font-bold break-words text-white sm:text-3xl md:text-4xl">
 					{config.winnerAnnouncement
 						.replace('{color}', colorNames[winningColor])
 						.replace('{count}', winningCount.toString())}
@@ -68,23 +78,27 @@ export const ColorResultsView: React.FC = () => {
 			</div>
 
 			{/* Results table */}
-			<div className="w-full max-w-2xl space-y-4">
-				<h2 className="text-center text-2xl font-bold text-slate-900">
+			<div className="w-full max-w-xl space-y-3 px-2 sm:space-y-4">
+				<h2 className="text-center text-lg font-bold text-slate-900 sm:text-xl">
 					{config.roundResultsMd.replace(
 						'{roundNumber}',
 						roundNumber.toString()
 					)}
 				</h2>
 
-				<div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+				<div className="grid grid-cols-2 gap-2 sm:gap-3">
 					{COLORS.map((color) => (
 						<div
 							key={color}
-							className={`rounded-2xl px-6 py-4 text-center text-white shadow-lg ${COLOR_CLASSES[color]}`}
+							className={`rounded-lg px-3 py-3 text-center text-white shadow-lg sm:rounded-2xl sm:px-6 sm:py-4 ${COLOR_CLASSES[color]}`}
 						>
-							<p className="text-4xl">{COLOR_EMOJIS[color]}</p>
-							<p className="mt-2 font-semibold">{colorNames[color]}</p>
-							<p className="text-3xl font-bold">{roundResults[color]}</p>
+							<p className="text-3xl sm:text-4xl">{COLOR_EMOJIS[color]}</p>
+							<p className="mt-1 text-xs font-semibold sm:mt-2 sm:text-sm">
+								{colorNames[color]}
+							</p>
+							<p className="text-2xl font-bold sm:text-3xl">
+								{roundResults[color]}
+							</p>
 						</div>
 					))}
 				</div>
@@ -94,7 +108,7 @@ export const ColorResultsView: React.FC = () => {
 			{isHost && (
 				<button
 					type="button"
-					className="km-btn-primary"
+					className="km-btn-primary h-12 w-full max-w-xs sm:max-w-sm"
 					onClick={handleNextRound}
 					disabled={buttonCooldown}
 				>
@@ -105,7 +119,7 @@ export const ColorResultsView: React.FC = () => {
 
 			{/* Waiting message */}
 			{!isHost && (
-				<p className="animate-pulse text-center text-lg font-semibold text-slate-600">
+				<p className="animate-pulse text-center text-base font-semibold text-slate-600 sm:text-lg">
 					Waiting for next round...
 				</p>
 			)}

@@ -107,9 +107,9 @@ export const ColorRoundControlView: React.FC = () => {
 			</div>
 
 			{/* Status message */}
-			<p className="text-center text-sm text-slate-600">
+			<p className="text-center text-lg font-medium text-slate-700">
 				{!roundActive ? (
-					<>Click &quot;Assign Colors &quot; to start a new round</>
+					<>Click &quot;Assign Colors&quot; to start a new round</>
 				) : (
 					<>Round {roundNumber} is active. Players are connecting...</>
 				)}

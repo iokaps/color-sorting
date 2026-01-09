@@ -6,10 +6,10 @@ import * as React from 'react';
 import Markdown from 'react-markdown';
 
 const COLOR_CLASSES: Record<ColorName, string> = {
-	red: 'bg-red-500',
-	blue: 'bg-blue-500',
-	green: 'bg-green-500',
-	yellow: 'bg-yellow-400'
+	red: 'bg-rose-600',
+	blue: 'bg-blue-700',
+	green: 'bg-emerald-600',
+	yellow: 'bg-amber-600'
 };
 
 export const ColorAssignmentView: React.FC = () => {
@@ -20,33 +20,38 @@ export const ColorAssignmentView: React.FC = () => {
 
 	if (!playerColor) {
 		return (
-			<div className="flex h-full flex-col items-center justify-center">
-				<p className="text-lg">{config.loading}</p>
+			<div className="flex h-full flex-col items-center justify-center space-y-4">
+				<p className="text-lg font-semibold text-slate-900">{config.loading}</p>
+				<p className="text-sm text-slate-600">
+					Waiting for host to assign colors...
+				</p>
 			</div>
 		);
 	}
 
 	return (
-		<div className="flex h-full flex-col items-center justify-center space-y-8 p-4">
+		<div className="flex h-full w-full flex-col items-center justify-center space-y-6 px-4 py-8 sm:space-y-8 sm:py-12">
 			{/* Large color card */}
 			<div
-				className={`flex h-64 w-64 items-center justify-center rounded-3xl shadow-2xl ${COLOR_CLASSES[playerColor]}`}
+				className={`flex h-40 w-40 items-center justify-center rounded-3xl shadow-2xl sm:h-64 sm:w-64 ${COLOR_CLASSES[playerColor]}`}
 			>
 				<div className="text-center">
-					<p className="text-2xl font-light text-white/80">You are</p>
-					<p className="text-6xl font-bold text-white">
+					<p className="text-lg font-light text-white/80 sm:text-2xl">
+						You are
+					</p>
+					<p className="text-4xl font-bold text-white sm:text-6xl">
 						{colorNames[playerColor]}
 					</p>
 				</div>
 			</div>
 
 			{/* Instructions */}
-			<div className="prose prose-invert text-center">
+			<div className="prose prose-sm sm:prose w-full max-w-sm text-center">
 				<Markdown>{config.colorAssignmentMd}</Markdown>
 			</div>
 
 			{/* Waiting message */}
-			<p className="animate-pulse text-xl font-semibold text-slate-600">
+			<p className="animate-pulse text-lg font-semibold text-slate-600 sm:text-xl">
 				Waiting for round to start...
 			</p>
 		</div>

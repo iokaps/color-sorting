@@ -9,7 +9,7 @@ import Markdown from 'react-markdown';
  */
 export const GameLobbyView: React.FC<React.PropsWithChildren> = () => {
 	return (
-		<article className="prose">
+		<article className="prose prose-sm sm:prose w-full max-w-xl px-4 text-center">
 			<Markdown>{config.gameLobbyMd}</Markdown>
 		</article>
 	);

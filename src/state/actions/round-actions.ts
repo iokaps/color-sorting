@@ -1,6 +1,6 @@
 import { kmClient } from '@/services/km-client';
 import type { KokimokiStore } from '@kokimoki/app';
-import { type ColorFactionState } from '../stores/color-store';
+import type { ColorFactionState } from '../stores/color-store';
 import { globalStore, type ColorName } from '../stores/global-store';
 import { colorActions } from './color-actions';
 
@@ -8,6 +8,7 @@ const COLORS: ColorName[] = ['red', 'blue', 'green', 'yellow'];
 
 export const roundActions = {
 	async assignColorsAndStartRound() {
+		// Assign colors to players
 		await kmClient.transact([globalStore], ([globalState]) => {
 			// Get list of online player IDs
 			const onlinePlayerIds = Array.from(globalStore.connections.clientIds);
