@@ -5,7 +5,7 @@ import { roundActions } from '@/state/actions/round-actions';
 import { globalStore } from '@/state/stores/global-store';
 import { useSnapshot } from '@kokimoki/app';
 import { KmTimeCountdown } from '@kokimoki/shared';
-import { CirclePlay, CircleStop, Minus, Plus } from 'lucide-react';
+import { CirclePlay, CircleStop } from 'lucide-react';
 import * as React from 'react';
 
 export const ColorRoundControlView: React.FC = () => {
@@ -60,86 +60,22 @@ export const ColorRoundControlView: React.FC = () => {
 
 	return (
 		<div className="flex flex-col items-center justify-center space-y-8 p-6">
-			{/* Round selection */}
-			{!roundActive && (
-				<div className="flex flex-col items-center gap-6">
-					{/* Current round */}
-					<div className="flex items-center gap-4">
-						<button
-							type="button"
-							className="km-btn-neutral rounded-full p-3"
-							onClick={() => roundActions.setRoundNumber(roundNumber - 1)}
-							disabled={roundNumber <= 0}
-							aria-label="Decrease round"
-						>
-							<Minus className="size-5" />
-						</button>
-						<div className="text-center">
-							<p className="text-sm text-slate-600">{config.roundNumber}</p>
-							<p className="text-5xl font-bold text-blue-600">{roundNumber}</p>
-						</div>
-						<button
-							type="button"
-							className="km-btn-neutral rounded-full p-3"
-							onClick={() => roundActions.setRoundNumber(roundNumber + 1)}
-							aria-label="Increase round"
-						>
-							<Plus className="size-5" />
-						</button>
-					</div>
-
-					{/* Total rounds */}
-					<div className="flex items-center gap-4">
-						<button
-							type="button"
-							className="km-btn-neutral rounded-full p-2"
-							onClick={() => roundActions.setTotalRounds(totalRounds - 1)}
-							disabled={totalRounds <= 1}
-							aria-label="Decrease total rounds"
-						>
-							<Minus className="size-4" />
-						</button>
-						<div className="text-center">
-							<p className="text-sm text-slate-600">
-								{config.totalRoundsLabel}
-							</p>
-							<p className="text-2xl font-bold text-slate-700">{totalRounds}</p>
-						</div>
-						<button
-							type="button"
-							className="km-btn-neutral rounded-full p-2"
-							onClick={() => roundActions.setTotalRounds(totalRounds + 1)}
-							aria-label="Increase total rounds"
-						>
-							<Plus className="size-4" />
-						</button>
-					</div>
-				</div>
-			)}
-
-			{/* Round info (when active) */}
-			{roundActive && (
-				<div className="text-center">
-					<p className="text-5xl font-bold text-blue-600">
-						{config.roundNumber} {roundNumber}
-					</p>
-				</div>
-			)}
-
-			{/* Timer */}
-			{roundActive && (
-				<div className="text-center">
-					<p className="text-sm text-slate-600">Time remaining</p>
-					<p className="text-6xl font-bold text-slate-900">
+			{/* Round info */}
+			<div className="text-center">
+				<p className="text-sm text-slate-600">
+					{config.roundNumber} {roundNumber} / {totalRounds}
+				</p>
+				{roundActive && (
+					<p className="mt-2 text-6xl font-bold text-slate-900">
 						<KmTimeCountdown ms={remainingMs} />
 					</p>
-					{remainingMs < 10000 && (
-						<p className="animate-pulse text-lg font-semibold text-red-600">
-							Almost time!
-						</p>
-					)}
-				</div>
-			)}
+				)}
+				{roundActive && remainingMs < 10000 && (
+					<p className="mt-2 animate-pulse text-lg font-semibold text-red-600">
+						Almost time!
+					</p>
+				)}
+			</div>
 
 			{/* Control buttons */}
 			<div className="space-y-4">
@@ -151,7 +87,9 @@ export const ColorRoundControlView: React.FC = () => {
 						disabled={buttonCooldown}
 					>
 						<CirclePlay className="size-5" />
-						{config.assignColorsButton}
+						{roundNumber === 0
+							? config.assignColorsButton
+							: config.nextRoundButton}
 					</button>
 				) : (
 					<button
@@ -169,7 +107,11 @@ export const ColorRoundControlView: React.FC = () => {
 			{/* Status message */}
 			<p className="text-center text-lg font-medium text-slate-700">
 				{!roundActive ? (
-					<>Click &quot;Assign Colors&quot; to start a new round</>
+					roundNumber === 0 ? (
+						<>Click to assign colors and start round 1</>
+					) : (
+						<>Click to start next round</>
+					)
 				) : (
 					<>Round {roundNumber} is active. Players are connecting...</>
 				)}

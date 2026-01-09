@@ -43,6 +43,13 @@ export const ColorSortingView: React.FC = () => {
 		? Object.keys(factionState.players).length
 		: 0;
 
+	// Auto-register player in their color faction when connected
+	React.useEffect(() => {
+		if (isConnected && playerColor) {
+			colorActions.registerPlayer(colorStore).catch(console.error);
+		}
+	}, [isConnected, playerColor, colorStore]);
+
 	// Generate QR code URL with player's Kokimoki ID
 	const qrCodeUrl = `${window.location.origin}/join?playerCode=${kmClient.id}`;
 
