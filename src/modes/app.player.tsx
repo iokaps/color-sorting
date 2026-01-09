@@ -14,6 +14,7 @@ import { ColorResultsView } from '@/views/color-results-view';
 import { ColorSortingView } from '@/views/color-sorting-view';
 import { ConnectionsView } from '@/views/connections-view';
 import { CreateProfileView } from '@/views/create-profile-view';
+import { FinalResultsView } from '@/views/final-results-view';
 import { GameLobbyView } from '@/views/game-lobby-view';
 import { useSnapshot } from '@kokimoki/app';
 import * as React from 'react';
@@ -21,9 +22,8 @@ import * as React from 'react';
 const App: React.FC = () => {
 	const { title } = config;
 	const { name, currentView } = useSnapshot(playerStore.proxy);
-	const { started, playerColors, roundActive, roundNumber } = useSnapshot(
-		globalStore.proxy
-	);
+	const { started, playerColors, roundActive, roundNumber, gameComplete } =
+		useSnapshot(globalStore.proxy);
 
 	useGlobalController();
 	useDocumentTitle(title);
@@ -80,11 +80,15 @@ const App: React.FC = () => {
 			<PlayerLayout.Header />
 
 			<PlayerLayout.Main>
-				{!hasColorAssignment && <ColorAssignmentView />}
-				{hasColorAssignment && roundActive && <ColorSortingView />}
-				{hasColorAssignment && !roundActive && roundNumber > 0 && (
+				{gameComplete ? (
+					<FinalResultsView />
+				) : !hasColorAssignment ? (
+					<ColorAssignmentView />
+				) : roundActive ? (
+					<ColorSortingView />
+				) : roundNumber > 0 ? (
 					<ColorResultsView />
-				)}
+				) : null}
 			</PlayerLayout.Main>
 
 			<PlayerLayout.Footer>

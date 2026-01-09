@@ -37,7 +37,10 @@ const HostPresenterHeader: React.FC<LayoutProps> = ({
 
 const HostPresenterMain: React.FC<LayoutProps> = ({ children, className }) => (
 	<main
-		className={cn('container mx-auto flex items-center px-4 py-16', className)}
+		className={cn(
+			'container mx-auto flex items-center justify-center px-4 py-16',
+			className
+		)}
 	>
 		{children}
 	</main>

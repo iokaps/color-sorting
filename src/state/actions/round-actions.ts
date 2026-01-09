@@ -13,8 +13,9 @@ export const roundActions = {
 			// Get list of online player IDs
 			const onlinePlayerIds = Array.from(globalStore.connections.clientIds);
 
-			// Reset round results
+			// Reset round results and game complete flag
 			globalState.roundResults = { red: 0, blue: 0, green: 0, yellow: 0 };
+			globalState.gameComplete = false;
 
 			// Assign colors equally to players
 			const playersPerColor = Math.ceil(onlinePlayerIds.length / COLORS.length);
@@ -54,10 +55,27 @@ export const roundActions = {
 			}
 		}
 
-		// Update global state with results
+		// Find winning color
+		const winningColor = COLORS.reduce((prev, curr) =>
+			results[curr] > results[prev] ? curr : prev
+		);
+
+		// Update global state with results and history
 		await kmClient.transact([globalStore], ([globalState]) => {
 			globalState.roundResults = results;
 			globalState.roundActive = false;
+
+			// Save round result to history
+			globalState.roundHistory[globalState.roundNumber.toString()] = {
+				winningColor,
+				winningColorName: globalState.colorNames[winningColor],
+				connectionCount: results[winningColor]
+			};
+
+			// Check if all rounds complete
+			if (globalState.roundNumber >= globalState.totalRounds) {
+				globalState.gameComplete = true;
+			}
 		});
 	},
 
@@ -65,6 +83,28 @@ export const roundActions = {
 		// Reset color factions and prepare for next assignment
 		await kmClient.transact([globalStore], ([globalState]) => {
 			globalState.playerColors = {};
+		});
+	},
+
+	async setRoundNumber(roundNumber: number) {
+		await kmClient.transact([globalStore], ([globalState]) => {
+			globalState.roundNumber = Math.max(0, roundNumber);
+		});
+	},
+
+	async setTotalRounds(totalRounds: number) {
+		await kmClient.transact([globalStore], ([globalState]) => {
+			globalState.totalRounds = Math.max(1, totalRounds);
+		});
+	},
+
+	async resetGame() {
+		await kmClient.transact([globalStore], ([globalState]) => {
+			globalState.roundNumber = 0;
+			globalState.roundHistory = {};
+			globalState.roundResults = { red: 0, blue: 0, green: 0, yellow: 0 };
+			globalState.playerColors = {};
+			globalState.gameComplete = false;
 		});
 	}
 };

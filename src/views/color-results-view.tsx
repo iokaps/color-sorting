@@ -37,13 +37,14 @@ export const ColorResultsView: React.FC = () => {
 	);
 	const winningCount = roundResults[winningColor];
 
-	// Trigger confetti on mount
+	// Trigger confetti on mount (only once)
 	React.useEffect(() => {
 		if (confetti) {
 			// Use 'standard' preset for player results view
 			confetti.triggerConfetti({ preset: 'standard' });
 		}
-	}, [confetti]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	// Button cooldown
 	React.useEffect(() => {
@@ -65,12 +66,12 @@ export const ColorResultsView: React.FC = () => {
 	};
 
 	return (
-		<div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-auto px-3 py-6 sm:gap-8 sm:px-4 sm:py-8">
+		<div className="flex h-full w-full flex-col items-center justify-center gap-3 overflow-auto px-2 py-3 sm:gap-5 sm:px-4 sm:py-6">
 			{/* Winner announcement */}
 			<div
-				className={`w-full max-w-xl rounded-2xl px-4 py-6 shadow-2xl sm:rounded-3xl sm:px-8 sm:py-8 ${COLOR_CLASSES[winningColor]}`}
+				className={`w-full max-w-md rounded-xl px-3 py-4 shadow-xl sm:rounded-2xl sm:px-6 sm:py-6 ${COLOR_CLASSES[winningColor]}`}
 			>
-				<p className="text-center text-2xl font-bold break-words text-white sm:text-3xl md:text-4xl">
+				<p className="text-center text-lg font-bold break-words text-white sm:text-2xl">
 					{config.winnerAnnouncement
 						.replace('{color}', colorNames[winningColor])
 						.replace('{count}', winningCount.toString())}
@@ -78,25 +79,25 @@ export const ColorResultsView: React.FC = () => {
 			</div>
 
 			{/* Results table */}
-			<div className="w-full max-w-xl space-y-3 px-2 sm:space-y-4">
-				<h2 className="text-center text-lg font-bold text-slate-900 sm:text-xl">
+			<div className="w-full max-w-md space-y-2 sm:space-y-3">
+				<h2 className="text-center text-sm font-bold text-slate-900 sm:text-lg">
 					{config.roundResultsMd.replace(
 						'{roundNumber}',
 						roundNumber.toString()
 					)}
 				</h2>
 
-				<div className="grid grid-cols-2 gap-2 sm:gap-3">
+				<div className="grid grid-cols-2 gap-1.5 sm:gap-2">
 					{COLORS.map((color) => (
 						<div
 							key={color}
-							className={`rounded-lg px-3 py-3 text-center text-white shadow-lg sm:rounded-2xl sm:px-6 sm:py-4 ${COLOR_CLASSES[color]}`}
+							className={`rounded-lg px-2 py-2 text-center text-white shadow-md sm:rounded-xl sm:px-4 sm:py-3 ${COLOR_CLASSES[color]}`}
 						>
-							<p className="text-3xl sm:text-4xl">{COLOR_EMOJIS[color]}</p>
-							<p className="mt-1 text-xs font-semibold sm:mt-2 sm:text-sm">
+							<p className="text-xl sm:text-2xl">{COLOR_EMOJIS[color]}</p>
+							<p className="text-[10px] font-semibold sm:text-xs">
 								{colorNames[color]}
 							</p>
-							<p className="text-2xl font-bold sm:text-3xl">
+							<p className="text-lg font-bold sm:text-xl">
 								{roundResults[color]}
 							</p>
 						</div>
@@ -108,18 +109,18 @@ export const ColorResultsView: React.FC = () => {
 			{isHost && (
 				<button
 					type="button"
-					className="km-btn-primary h-12 w-full max-w-xs sm:max-w-sm"
+					className="km-btn-primary h-10 w-full max-w-xs text-sm sm:h-11 sm:max-w-sm"
 					onClick={handleNextRound}
 					disabled={buttonCooldown}
 				>
-					<CircleArrowRight className="size-5" />
+					<CircleArrowRight className="size-4" />
 					{config.nextRoundButton}
 				</button>
 			)}
 
 			{/* Waiting message */}
 			{!isHost && (
-				<p className="animate-pulse text-center text-base font-semibold text-slate-600 sm:text-lg">
+				<p className="animate-pulse text-center text-sm font-semibold text-slate-600 sm:text-base">
 					Waiting for next round...
 				</p>
 			)}

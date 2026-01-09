@@ -107,10 +107,27 @@ export function useGlobalController() {
 						console.error('Error calculating round results:', error);
 					}
 
-					// Update global state with results and end the round
+					// Find winning color
+					const winningColor = COLORS.reduce((prev, curr) =>
+						results[curr] > results[prev] ? curr : prev
+					);
+
+					// Update global state with results, history, and end the round
 					await kmClient.transact([globalStore], ([globalState]) => {
 						globalState.roundResults = results;
 						globalState.roundActive = false;
+
+						// Save round result to history
+						globalState.roundHistory[globalState.roundNumber.toString()] = {
+							winningColor,
+							winningColorName: globalState.colorNames[winningColor],
+							connectionCount: results[winningColor]
+						};
+
+						// Check if all rounds complete
+						if (globalState.roundNumber >= globalState.totalRounds) {
+							globalState.gameComplete = true;
+						}
 					});
 				};
 

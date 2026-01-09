@@ -131,7 +131,7 @@ export const ColorPresenterView: React.FC = () => {
 	}, [roundActive, confetti, confettiTriggered, roundResults]);
 
 	return (
-		<div className="flex h-full flex-col items-center justify-center space-y-12 p-8">
+		<div className="flex h-full w-full max-w-7xl flex-col items-center justify-center space-y-12">
 			{/* Logo display */}
 			{logoUrl && logoUrl.length > 0 && (
 				<div className="mb-4">
@@ -141,53 +141,55 @@ export const ColorPresenterView: React.FC = () => {
 
 			{/* Round info and timer */}
 			{roundActive && (
-				<div className="rounded-2xl bg-blue-50 px-8 py-6 text-center">
-					<p className="text-lg font-semibold text-blue-900">
+				<div className="rounded-2xl border border-blue-400/30 bg-blue-50/20 px-8 py-6 text-center backdrop-blur-sm">
+					<p className="text-lg font-semibold text-blue-200">
 						Round {roundNumber}
 					</p>
-					<p className="mt-2 text-5xl font-bold text-blue-600">
+					<p className="mt-2 text-6xl font-bold text-blue-300">
 						<KmTimeCountdown ms={remainingMs} />
 					</p>
 					{remainingMs < 10000 && (
-						<p className="animate-pulse text-lg font-semibold text-red-600">
+						<p className="mt-2 animate-pulse text-lg font-semibold text-red-400">
 							Almost time!
 						</p>
 					)}
 				</div>
 			)}
 
-			{/* Large color blocks display */}
-			<div className="grid w-full grid-cols-2 gap-8 md:grid-cols-4">
-				{COLORS.map((color) => (
-					<div
-						key={color}
-						className={`flex flex-col items-center justify-center rounded-3xl px-8 py-12 shadow-2xl ${COLOR_CLASSES[color]} transition-all duration-300`}
-					>
-						{/* Color emoji */}
-						<p className="text-6xl">{COLOR_EMOJIS[color]}</p>
+			{/* Large color blocks display - grid layout */}
+			<div className="w-full">
+				<div className="grid w-full grid-cols-2 gap-6 md:gap-8 lg:grid-cols-4">
+					{COLORS.map((color) => (
+						<div
+							key={color}
+							className={`flex flex-col items-center justify-center rounded-2xl px-6 py-10 shadow-2xl lg:rounded-3xl lg:px-8 lg:py-12 ${COLOR_CLASSES[color]} transition-all duration-300 hover:scale-105`}
+						>
+							{/* Color emoji */}
+							<p className="text-5xl lg:text-6xl">{COLOR_EMOJIS[color]}</p>
 
-						{/* Color name */}
-						<p className="mt-4 text-2xl font-bold text-white">
-							{colorNames[color]}
-						</p>
+							{/* Color name */}
+							<p className="mt-3 text-lg font-bold text-white lg:mt-4 lg:text-2xl">
+								{colorNames[color]}
+							</p>
 
-						{/* Faction count */}
-						<p className="mt-6 text-5xl font-bold text-white/90">
-							{factionCounts[color]}
-						</p>
-						<p className="text-lg font-semibold text-white/80">
-							{factionCounts[color] === 1 ? 'player' : 'players'}
-						</p>
-					</div>
-				))}
+							{/* Faction count */}
+							<p className="mt-4 text-4xl font-bold text-white/90 lg:mt-6 lg:text-5xl">
+								{factionCounts[color]}
+							</p>
+							<p className="text-sm font-semibold text-white/80 lg:text-lg">
+								{factionCounts[color] === 1 ? 'player' : 'players'}
+							</p>
+						</div>
+					))}
+				</div>
 			</div>
 
 			{/* Summary */}
-			<div className="rounded-2xl bg-slate-100 px-8 py-6 text-center">
-				<p className="text-2xl font-bold text-slate-900">
+			<div className="rounded-2xl border border-slate-600/50 bg-slate-700/50 px-6 py-4 text-center backdrop-blur-sm lg:px-8 lg:py-6">
+				<p className="text-3xl font-bold text-white lg:text-4xl">
 					{Object.values(factionCounts).reduce((a, b) => a + b, 0)}
 				</p>
-				<p className="text-lg text-slate-600">Total connected</p>
+				<p className="text-base text-slate-300 lg:text-lg">Total connected</p>
 			</div>
 		</div>
 	);

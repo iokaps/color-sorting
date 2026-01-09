@@ -5,12 +5,13 @@ import { roundActions } from '@/state/actions/round-actions';
 import { globalStore } from '@/state/stores/global-store';
 import { useSnapshot } from '@kokimoki/app';
 import { KmTimeCountdown } from '@kokimoki/shared';
-import { CirclePlay, CircleStop } from 'lucide-react';
+import { CirclePlay, CircleStop, Minus, Plus } from 'lucide-react';
 import * as React from 'react';
 
 export const ColorRoundControlView: React.FC = () => {
 	const {
 		roundNumber,
+		totalRounds,
 		roundStartTimestamp,
 		roundActive,
 		roundDurationSeconds
@@ -59,12 +60,71 @@ export const ColorRoundControlView: React.FC = () => {
 
 	return (
 		<div className="flex flex-col items-center justify-center space-y-8 p-6">
-			{/* Round info */}
-			<div className="text-center">
-				<p className="text-5xl font-bold text-blue-600">
-					{config.roundNumber} {roundNumber}
-				</p>
-			</div>
+			{/* Round selection */}
+			{!roundActive && (
+				<div className="flex flex-col items-center gap-6">
+					{/* Current round */}
+					<div className="flex items-center gap-4">
+						<button
+							type="button"
+							className="km-btn-neutral rounded-full p-3"
+							onClick={() => roundActions.setRoundNumber(roundNumber - 1)}
+							disabled={roundNumber <= 0}
+							aria-label="Decrease round"
+						>
+							<Minus className="size-5" />
+						</button>
+						<div className="text-center">
+							<p className="text-sm text-slate-600">{config.roundNumber}</p>
+							<p className="text-5xl font-bold text-blue-600">{roundNumber}</p>
+						</div>
+						<button
+							type="button"
+							className="km-btn-neutral rounded-full p-3"
+							onClick={() => roundActions.setRoundNumber(roundNumber + 1)}
+							aria-label="Increase round"
+						>
+							<Plus className="size-5" />
+						</button>
+					</div>
+
+					{/* Total rounds */}
+					<div className="flex items-center gap-4">
+						<button
+							type="button"
+							className="km-btn-neutral rounded-full p-2"
+							onClick={() => roundActions.setTotalRounds(totalRounds - 1)}
+							disabled={totalRounds <= 1}
+							aria-label="Decrease total rounds"
+						>
+							<Minus className="size-4" />
+						</button>
+						<div className="text-center">
+							<p className="text-sm text-slate-600">
+								{config.totalRoundsLabel}
+							</p>
+							<p className="text-2xl font-bold text-slate-700">{totalRounds}</p>
+						</div>
+						<button
+							type="button"
+							className="km-btn-neutral rounded-full p-2"
+							onClick={() => roundActions.setTotalRounds(totalRounds + 1)}
+							aria-label="Increase total rounds"
+						>
+							<Plus className="size-4" />
+						</button>
+					</div>
+				</div>
+			)}
+
+			{/* Round info (when active) */}
+			{roundActive && (
+				<div className="text-center">
+					<p className="text-5xl font-bold text-blue-600">
+						{config.roundNumber} {roundNumber}
+					</p>
+				</div>
+			)}
 
 			{/* Timer */}
 			{roundActive && (

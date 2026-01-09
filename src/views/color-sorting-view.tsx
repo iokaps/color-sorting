@@ -12,7 +12,6 @@ import { useSnapshot } from '@kokimoki/app';
 import { KmQrCode } from '@kokimoki/shared';
 import { Scan } from 'lucide-react';
 import * as React from 'react';
-import Markdown from 'react-markdown';
 
 const COLOR_CLASSES: Record<ColorName, string> = {
 	red: 'bg-rose-600',
@@ -93,62 +92,57 @@ export const ColorSortingView: React.FC = () => {
 	}
 
 	return (
-		<div className="flex h-full w-full flex-col items-center justify-center gap-4 overflow-y-auto px-3 py-4 sm:gap-6 sm:px-4 sm:py-6">
-			{/* Color reference card */}
-			<div
-				className={`flex h-16 w-16 items-center justify-center rounded-xl shadow-lg sm:h-20 sm:w-20 sm:rounded-2xl ${COLOR_CLASSES[playerColor]}`}
-			>
-				<p className="text-xs font-bold text-white sm:text-sm">
-					{colorNames[playerColor]}
-				</p>
-			</div>
-
-			{/* Group size display */}
-			{isConnected && (
-				<div className="rounded-lg bg-blue-50 p-4 text-center sm:rounded-xl sm:p-6">
-					<p className="text-3xl font-bold text-blue-600 sm:text-4xl">
-						{connectedCount + 1}
-					</p>
-					<p className="text-xs text-blue-700 sm:text-sm">
-						{connectedCount === 0
-							? 'Just you'
-							: config.connectedWithCountMd.replace(
-									'{count}',
-									connectedCount.toString()
-								)}
+		<div className="flex h-full w-full flex-col items-center justify-center gap-2 overflow-y-auto px-2 py-2 sm:gap-4 sm:px-4 sm:py-4">
+			{/* Color reference + Group size in row */}
+			<div className="flex items-center gap-3">
+				<div
+					className={`flex h-12 w-12 items-center justify-center rounded-lg shadow-md sm:h-14 sm:w-14 sm:rounded-xl ${COLOR_CLASSES[playerColor]}`}
+				>
+					<p className="text-[10px] font-bold text-white sm:text-xs">
+						{colorNames[playerColor]}
 					</p>
 				</div>
-			)}
-
-			{/* Instructions */}
-			<div className="prose prose-sm sm:prose w-full max-w-sm text-center">
-				<Markdown>{config.colorSortingInstructionsMd}</Markdown>
+				{isConnected && (
+					<div className="rounded-lg bg-blue-50 px-4 py-2 text-center sm:px-6 sm:py-3">
+						<p className="text-2xl font-bold text-blue-600 sm:text-3xl">
+							{connectedCount + 1}
+						</p>
+						<p className="text-[10px] text-blue-700 sm:text-xs">
+							{connectedCount === 0
+								? 'Just you'
+								: config.connectedWithCountMd.replace(
+										'{count}',
+										connectedCount.toString()
+									)}
+						</p>
+					</div>
+				)}
 			</div>
 
 			{/* QR Code section */}
-			<div className="w-full max-w-xs space-y-3 rounded-lg bg-slate-50 p-4 sm:max-w-sm sm:space-y-4 sm:rounded-xl sm:p-6">
-				<p className="text-center text-xs font-medium text-slate-600 sm:text-sm">
+			<div className="w-full max-w-xs space-y-1 rounded-lg bg-slate-50 p-3 sm:max-w-sm sm:space-y-2 sm:p-4">
+				<p className="text-center text-[10px] font-medium text-slate-600 sm:text-xs">
 					Others scan this code
 				</p>
 				<div className="flex justify-center">
-					<KmQrCode data={qrCodeUrl} size={160} />
+					<KmQrCode data={qrCodeUrl} size={140} />
 				</div>
 			</div>
 
 			{/* Scan button */}
 			<button
 				type="button"
-				className="km-btn-primary h-12 w-full max-w-xs sm:max-w-sm"
+				className="km-btn-primary h-10 w-full max-w-xs text-sm sm:h-11 sm:max-w-sm"
 				onClick={() => setShowScanner(true)}
 			>
-				<Scan className="size-5" />
+				<Scan className="size-4" />
 				{config.scanQrCodeButton}
 			</button>
 
 			{/* Feedback message */}
 			{feedback && (
 				<div
-					className={`w-full max-w-xs rounded-lg p-3 text-center text-sm sm:max-w-sm sm:rounded-xl sm:p-4 ${
+					className={`w-full max-w-xs rounded-lg p-2 text-center text-xs sm:max-w-sm sm:p-3 sm:text-sm ${
 						feedbackType === 'success'
 							? 'bg-green-100 text-green-900'
 							: feedbackType === 'error'

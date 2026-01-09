@@ -63,9 +63,7 @@ export const schema = z.object({
 	winnerAnnouncement: z
 		.string()
 		.default('🎉 {color} wins this round with {count} connected!'),
-	roundResultsMd: z
-		.string()
-		.default('# Round {roundNumber} Results\n\nLargest factions by color:'),
+	roundResultsMd: z.string().default('Round {roundNumber} Results'),
 
 	// Color naming (customization)
 	colorNamingMd: z
@@ -75,9 +73,17 @@ export const schema = z.object({
 		),
 	colorNameLabel: z.string().default('Color name'),
 	roundDurationLabel: z.string().default('Round duration (seconds)'),
+	totalRoundsLabel: z.string().default('Total rounds'),
 	logoUploadLabel: z.string().default('Upload logo (optional)'),
 	saveColorNamesButton: z.string().default('Save Names & Start Game'),
-	editColorNamesButton: z.string().default('Edit Color Names')
+	editColorNamesButton: z.string().default('Edit Color Names'),
+
+	// Final results
+	finalResultsTitle: z.string().default('🏆 Final Results'),
+	roundWinnerLabel: z.string().default('Round {roundNumber}'),
+	connectionsLabel: z.string().default('{count} connections'),
+	playAgainButton: z.string().default('Play Again'),
+	gameCompleteMessage: z.string().default('All rounds complete!')
 });
 
 export type Config = z.infer<typeof schema>;

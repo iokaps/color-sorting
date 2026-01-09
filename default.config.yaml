@@ -89,7 +89,7 @@ colorGreen: 'Emerald'
 colorYellow: 'Gold'
 roundDurationSeconds: 90
 winnerAnnouncement: '🎉 {color} wins this round with {count} connected!'
-roundResultsMd: 'Round {roundNumber} Results\n\nLargest factions by color:'
+roundResultsMd: 'Round {roundNumber} Results'
 # Color naming (customization)
 colorNamingMd: |
   # Name the Colors
@@ -98,6 +98,14 @@ colorNamingMd: |
 
 colorNameLabel: 'Color name'
 roundDurationLabel: 'Round duration (seconds)'
+totalRoundsLabel: 'Total rounds'
 logoUploadLabel: 'Upload logo (optional)'
 saveColorNamesButton: 'Save Names & Start Game'
 editColorNamesButton: 'Edit Color Names'
+
+# Final results
+finalResultsTitle: '🏆 Final Results'
+roundWinnerLabel: 'Round {roundNumber}'
+connectionsLabel: '{count} connections'
+playAgainButton: 'Play Again'
+gameCompleteMessage: 'All rounds complete!'

@@ -1,3 +1,4 @@
+import { withKmProviders } from '@/components/with-km-providers';
 import { config } from '@/config';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useGlobalController } from '@/hooks/useGlobalController';
@@ -8,6 +9,7 @@ import { globalActions } from '@/state/actions/global-actions';
 import { globalStore } from '@/state/stores/global-store';
 import { ColorNamingView } from '@/views/color-naming-view';
 import { ColorRoundControlView } from '@/views/color-round-control-view';
+import { FinalResultsView } from '@/views/final-results-view';
 import { SharedStateView } from '@/views/shared-state-view';
 import { useSnapshot } from '@kokimoki/app';
 import { CirclePlay, CircleStop, SquareArrowOutUpRight } from 'lucide-react';
@@ -17,7 +19,9 @@ const App: React.FC = () => {
 	useGlobalController();
 	const { title } = config;
 	const isHost = kmClient.clientContext.mode === 'host';
-	const { started, showPresenterQr } = useSnapshot(globalStore.proxy);
+	const { started, showPresenterQr, gameComplete } = useSnapshot(
+		globalStore.proxy
+	);
 	const [showColorNaming, setShowColorNaming] = React.useState(false);
 	const [buttonCooldown, setButtonCooldown] = React.useState(true);
 	useDocumentTitle(title);
@@ -72,6 +76,8 @@ const App: React.FC = () => {
 							{config.togglePresenterQrButton}
 						</button>
 					</div>
+				) : gameComplete ? (
+					<FinalResultsView />
 				) : (
 					<ColorRoundControlView />
 				)}
@@ -127,4 +133,4 @@ const App: React.FC = () => {
 	);
 };
 
-export default App;
+export default withKmProviders(App);
