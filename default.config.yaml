@@ -1,43 +1,14 @@
 # yaml-language-server: $schema=./.kokimoki/schema.json
 
 # Translations
-title: 'Host Starter'
+title: 'Color Sorting'
 
 gameLobbyMd: |
-  # Game Lobby
+  # Color Sorting
 
-  This is a sample markdown to demonstrate various markdown features.
+  ## How to Play
 
-  ## Starting soon
-
-  Game is starting soon. **Get ready!**
-
-  ## Rules
-
-  1. Wait for the host to start the game.
-  2. Follow the instructions on the presenter screen.
-  3. Open [Games for Crowds](https://gamesforcrowds.com) for more info.
-
-  ## What people say
-
-  > **This game is awesome!** - Player 1
-
-  > **I had a good time playing this.** - Player 2
-
-  > **Always looking forward to the next round!**  - Player 3
-
-  ---
-
-  ## Sample Code
-
-  ```
-  // Code block
-  console.log('Hello, world!');
-  ```
-
-  ## Sample Image
-
-  ![Logo](/logo.svg)
+  Everyone will be assigned a color. Find other players with your color and scan their QR codes to form the largest group!
 
 connectionsMd: |
   Scan the QR to join the game.
@@ -93,3 +64,40 @@ openPlayerHelpButton: 'Force Players Help to Open'
 
 menuAriaLabel: 'Open menu drawer'
 menuHelpAriaLabel: 'Open help drawer'
+
+# Color Sorting Game Config
+colorAssignmentMd: |
+  # You are assigned this color
+
+  Find other players with the same color and scan their QR codes to connect!
+
+colorSortingInstructionsMd: |
+  # Scan QR Codes
+
+  Find players with your color and scan their QR codes to grow your group!
+
+assignColorsButton: 'Assign Colors & Start'
+endRoundButton: 'End Round'
+nextRoundButton: 'Next Round'
+roundNumber: 'Round'
+connectedWithCountMd: 'Connected with {count} others'
+alreadyConnectedMd: 'Already connected to this player'
+scanQrCodeButton: 'Scan QR Code'
+colorRed: 'Red'
+colorBlue: 'Blue'
+colorGreen: 'Green'
+colorYellow: 'Yellow'
+roundDurationSeconds: 90
+winnerAnnouncement: '🎉 {color} wins this round with {count} connected!'
+roundResultsMd: 'Round {roundNumber} Results\n\nLargest factions by color:'
+# Color naming (customization)
+colorNamingMd: |
+  # Name the Colors
+
+  Customize the color names for this game round. For example: Red → Marketing, Blue → Engineering.
+
+colorNameLabel: 'Color name'
+roundDurationLabel: 'Round duration (seconds)'
+logoUploadLabel: 'Upload logo (optional)'
+saveColorNamesButton: 'Save Names & Start Game'
+editColorNamesButton: 'Edit Color Names'

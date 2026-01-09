@@ -6,6 +6,8 @@ import { HostPresenterLayout } from '@/layouts/host-presenter';
 import { kmClient } from '@/services/km-client';
 import { globalStore } from '@/state/stores/global-store';
 import { cn } from '@/utils/cn';
+import { ColorPresenterView } from '@/views/color-presenter-view';
+import { ColorResultsView } from '@/views/color-results-view';
 import { ConnectionsView } from '@/views/connections-view';
 import { useSnapshot } from '@kokimoki/app';
 import { KmQrCode } from '@kokimoki/shared';
@@ -13,7 +15,9 @@ import * as React from 'react';
 
 const App: React.FC = () => {
 	const { title } = config;
-	const { showPresenterQr } = useSnapshot(globalStore.proxy);
+	const { showPresenterQr, started, roundActive, roundNumber } = useSnapshot(
+		globalStore.proxy
+	);
 
 	useGlobalController();
 	useDocumentTitle(title);
@@ -32,13 +36,19 @@ const App: React.FC = () => {
 				<HostPresenterLayout.Header />
 
 				<HostPresenterLayout.Main>
-					<ConnectionsView>
-						<KmQrCode
-							data={playerLink}
-							size={200}
-							className={cn(!showPresenterQr && 'invisible')}
-						/>
-					</ConnectionsView>
+					{!started ? (
+						<ConnectionsView>
+							<KmQrCode
+								data={playerLink}
+								size={200}
+								className={cn(!showPresenterQr && 'invisible')}
+							/>
+						</ConnectionsView>
+					) : roundActive ? (
+						<ColorPresenterView />
+					) : roundNumber > 0 ? (
+						<ColorResultsView />
+					) : null}
 				</HostPresenterLayout.Main>
 			</HostPresenterLayout.Root>
 		</>

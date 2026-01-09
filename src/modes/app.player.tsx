@@ -5,32 +5,44 @@ import { config } from '@/config';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useGlobalController } from '@/hooks/useGlobalController';
 import { PlayerLayout } from '@/layouts/player';
+import { kmClient } from '@/services/km-client';
 import { playerActions } from '@/state/actions/player-actions';
 import { globalStore } from '@/state/stores/global-store';
 import { playerStore } from '@/state/stores/player-store';
+import { ColorAssignmentView } from '@/views/color-assignment-view';
+import { ColorResultsView } from '@/views/color-results-view';
+import { ColorSortingView } from '@/views/color-sorting-view';
 import { ConnectionsView } from '@/views/connections-view';
 import { CreateProfileView } from '@/views/create-profile-view';
 import { GameLobbyView } from '@/views/game-lobby-view';
-import { SharedStateView } from '@/views/shared-state-view';
 import { useSnapshot } from '@kokimoki/app';
 import * as React from 'react';
 
 const App: React.FC = () => {
 	const { title } = config;
 	const { name, currentView } = useSnapshot(playerStore.proxy);
-	const { started } = useSnapshot(globalStore.proxy);
+	const { started, playerColors, roundActive, roundNumber } = useSnapshot(
+		globalStore.proxy
+	);
 
 	useGlobalController();
 	useDocumentTitle(title);
 
+	const playerColor = playerColors[kmClient.id];
+	const hasColorAssignment = Boolean(playerColor);
+
 	React.useEffect(() => {
-		// While game start, force view to 'shared-state', otherwise to 'lobby'
-		if (started) {
-			playerActions.setCurrentView('shared-state');
-		} else {
+		// Update view based on game state
+		if (!started) {
 			playerActions.setCurrentView('lobby');
+		} else if (!hasColorAssignment) {
+			playerActions.setCurrentView('lobby');
+		} else if (roundActive) {
+			playerActions.setCurrentView('sorting');
+		} else if (roundNumber > 0) {
+			playerActions.setCurrentView('results');
 		}
-	}, [started]);
+	}, [started, hasColorAssignment, roundActive, roundNumber]);
 
 	if (!name) {
 		return (
@@ -62,13 +74,20 @@ const App: React.FC = () => {
 		);
 	}
 
+	// Game has started - show color-based views
 	return (
 		<PlayerLayout.Root>
 			<PlayerLayout.Header />
 
 			<PlayerLayout.Main>
-				{currentView === 'shared-state' && <SharedStateView />}
-				{/* Add new views here */}
+				{!hasColorAssignment && <ColorAssignmentView />}
+				{hasColorAssignment && roundActive && <ColorSortingView />}
+				{hasColorAssignment && !roundActive && roundNumber > 0 && (
+					<ColorResultsView />
+				)}
+				{!roundActive && !hasColorAssignment && roundNumber === 0 && (
+					<ColorAssignmentView />
+				)}
 			</PlayerLayout.Main>
 
 			<PlayerLayout.Footer>

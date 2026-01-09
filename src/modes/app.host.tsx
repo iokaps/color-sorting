@@ -6,6 +6,8 @@ import { HostPresenterLayout } from '@/layouts/host-presenter';
 import { kmClient } from '@/services/km-client';
 import { globalActions } from '@/state/actions/global-actions';
 import { globalStore } from '@/state/stores/global-store';
+import { ColorNamingView } from '@/views/color-naming-view';
+import { ColorRoundControlView } from '@/views/color-round-control-view';
 import { SharedStateView } from '@/views/shared-state-view';
 import { useSnapshot } from '@kokimoki/app';
 import { CirclePlay, CircleStop, SquareArrowOutUpRight } from 'lucide-react';
@@ -16,6 +18,7 @@ const App: React.FC = () => {
 	const { title } = config;
 	const isHost = kmClient.clientContext.mode === 'host';
 	const { started, showPresenterQr } = useSnapshot(globalStore.proxy);
+	const [showColorNaming, setShowColorNaming] = React.useState(false);
 	const [buttonCooldown, setButtonCooldown] = React.useState(true);
 	useDocumentTitle(title);
 
@@ -46,30 +49,38 @@ const App: React.FC = () => {
 		<HostPresenterLayout.Root>
 			<HostPresenterLayout.Header />
 			<HostPresenterLayout.Main>
-				<div className="space-y-4">
-					<SharedStateView />
+				{showColorNaming ? (
+					<ColorNamingView />
+				) : !started ? (
+					<div className="space-y-4">
+						<SharedStateView />
 
-					<button
-						type="button"
-						className={showPresenterQr ? 'km-btn-neutral' : 'km-btn-secondary'}
-						onClick={globalActions.togglePresenterQr}
-					>
-						{config.togglePresenterQrButton}
-					</button>
-				</div>
+						<button
+							type="button"
+							className={
+								showPresenterQr ? 'km-btn-neutral' : 'km-btn-secondary'
+							}
+							onClick={globalActions.togglePresenterQr}
+						>
+							{config.togglePresenterQrButton}
+						</button>
+					</div>
+				) : (
+					<ColorRoundControlView />
+				)}
 			</HostPresenterLayout.Main>
 
 			<HostPresenterLayout.Footer>
 				<div className="inline-flex flex-wrap gap-4">
-					{!started && isHost && (
+					{!started && !showColorNaming && isHost && (
 						<button
 							type="button"
 							className="km-btn-primary"
-							onClick={globalActions.startGame}
+							onClick={() => setShowColorNaming(true)}
 							disabled={buttonCooldown}
 						>
 							<CirclePlay className="size-5" />
-							{config.startButton}
+							{config.editColorNamesButton}
 						</button>
 					)}
 					{started && isHost && (
