@@ -1,0 +1,95 @@
+# yaml-language-server: $schema=./.kokimoki/schema.json
+
+# Translations
+title: 'Host Starter'
+
+gameLobbyMd: |
+  # Game Lobby
+
+  This is a sample markdown to demonstrate various markdown features.
+
+  ## Starting soon
+
+  Game is starting soon. **Get ready!**
+
+  ## Rules
+
+  1. Wait for the host to start the game.
+  2. Follow the instructions on the presenter screen.
+  3. Open [Games for Crowds](https://gamesforcrowds.com) for more info.
+
+  ## What people say
+
+  > **This game is awesome!** - Player 1
+
+  > **I had a good time playing this.** - Player 2
+
+  > **Always looking forward to the next round!**  - Player 3
+
+  ---
+
+  ## Sample Code
+
+  ```
+  // Code block
+  console.log('Hello, world!');
+  ```
+
+  ## Sample Image
+
+  ![Logo](/logo.svg)
+
+connectionsMd: |
+  Scan the QR to join the game.
+
+sharedStateMd: |
+  # Shared State Host
+  This is an example of shared state view. Host can start the game, open the presenter screen and allow players to join by scanning the QR.
+
+  ## Host Actions
+  Here's a demo of dashboard actions that can be used to control the state on presenter and player screens.
+
+sharedStatePlayerMd: |
+  # Shared State Player
+  You are connected as a player. Host has started the game. In this shared state example the playtime is synchronized between all players.
+
+players: 'Players Connected'
+online: 'Online'
+offline: 'Offline'
+startButton: 'Start Game'
+stopButton: 'Stop Game'
+
+loading: 'Loading...'
+
+menuHelpMd: |
+  # Help
+
+  This is the help section. Here you can find information about how to play the game and get assistance if needed.
+
+  ## How to Play
+
+  1. Join the game using the provided link or QR code.
+  2. Follow the instructions on your screen.
+  3. Interact with other players as required by the game.
+
+  ## Getting Assistance
+
+  If you encounter any issues, please contact the host or refer to the FAQ section on our website.
+
+createProfileMd: |
+  # Welcome!
+
+  Please enter your name to join the game.
+
+playerNamePlaceholder: 'Your name...'
+playerNameLabel: 'Name:'
+playerNameButton: 'Continue'
+
+playerLinkLabel: 'Player Link'
+presenterLinkLabel: 'Presenter Link'
+
+togglePresenterQrButton: 'Toggle Presenter QR'
+openPlayerHelpButton: 'Force Players Help to Open'
+
+menuAriaLabel: 'Open menu drawer'
+menuHelpAriaLabel: 'Open help drawer'

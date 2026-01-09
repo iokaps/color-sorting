@@ -1,0 +1,65 @@
+/* Font imports */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+
+/* Imports */
+@import 'tailwindcss';
+@import '@kokimoki/shared/styles.css';
+
+@plugin '@tailwindcss/typography';
+
+@theme {
+	/* Add theme styling here */
+	--km-font-sans:
+		'Noto Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+		'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+	--font-serif: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+	--font-mono:
+		ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+		'Courier New', monospace;
+}
+
+/* Markdown styling with Tailwind Typography (prose) */
+.prose {
+	--tw-prose-headings: var(--color-slate-900);
+	--tw-prose-body: var(--color-slate-900);
+	--tw-prose-bold: var(--color-slate-900);
+	--tw-prose-links: var(--color-blue-500);
+	--tw-prose-bullets: var(--color-slate-500);
+	--tw-prose-counters: var(--color-slate-500);
+	--tw-prose-quotes: var(--color-slate-900);
+	--tw-prose-pre-bg: var(--color-slate-900);
+	--tw-prose-pre-code: var(--color-slate-100);
+	--tw-prose-hr: var(--color-slate-300);
+}
+
+html,
+body {
+	@apply overscroll-none text-slate-900;
+}
+
+.km-input {
+	@apply w-full max-w-96 rounded-xl border border-slate-300 bg-slate-50 px-5 py-3 transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50;
+}
+
+.km-btn-primary,
+.km-btn-secondary,
+.km-btn-error,
+.km-btn-neutral {
+	@apply inline-flex items-center justify-center gap-3 rounded-xl px-5 py-3 font-medium transition-colors not-disabled:cursor-pointer disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:opacity-50;
+}
+
+.km-btn-primary {
+	@apply not-disabled:bg-blue-500 not-disabled:text-white not-disabled:hover:bg-blue-600;
+}
+
+.km-btn-secondary {
+	@apply not-disabled:bg-blue-100 not-disabled:text-blue-950 not-disabled:hover:bg-blue-200;
+}
+
+.km-btn-error {
+	@apply not-disabled:bg-red-500 not-disabled:text-white not-disabled:hover:bg-red-600;
+}
+
+.km-btn-neutral {
+	@apply not-disabled:bg-slate-600 not-disabled:text-white not-disabled:hover:bg-slate-700;
+}
