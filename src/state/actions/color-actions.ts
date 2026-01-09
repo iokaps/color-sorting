@@ -31,6 +31,14 @@ export const colorActions = {
 		await kmClient.transact([store], ([state]) => {
 			const now = kmClient.serverTimestamp();
 
+			// Initialize objects if not exists (defensive check for sync race)
+			if (!state.players) {
+				state.players = {};
+			}
+			if (!state.edges) {
+				state.edges = {};
+			}
+
 			// Register both players in the faction
 			if (!state.players[currentPlayerId]) {
 				state.players[currentPlayerId] = { joinedAt: now };
@@ -56,6 +64,10 @@ export const colorActions = {
 	async registerPlayer(store: KokimokiStore<ColorFactionState>): Promise<void> {
 		const currentPlayerId = kmClient.id;
 		await kmClient.transact([store], ([state]) => {
+			// Initialize players object if not exists (defensive check for sync race)
+			if (!state.players) {
+				state.players = {};
+			}
 			if (!state.players[currentPlayerId]) {
 				state.players[currentPlayerId] = {
 					joinedAt: kmClient.serverTimestamp()

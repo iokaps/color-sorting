@@ -20,11 +20,11 @@ const COLOR_CLASSES: Record<ColorName, string> = {
 	yellow: 'bg-amber-600'
 };
 
-export const ColorSortingView: React.FC = () => {
-	const { playerColors, roundActive, colorNames } = useSnapshot(
-		globalStore.proxy
-	);
-	const playerColor = playerColors[kmClient.id];
+// Inner component that requires playerColor to be defined
+const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
+	playerColor
+}) => {
+	const { colorNames } = useSnapshot(globalStore.proxy);
 	const [showScanner, setShowScanner] = React.useState(false);
 	const [feedback, setFeedback] = React.useState<string | null>(null);
 	const [feedbackType, setFeedbackType] = React.useState<
@@ -45,10 +45,10 @@ export const ColorSortingView: React.FC = () => {
 
 	// Auto-register player in their color faction when connected
 	React.useEffect(() => {
-		if (isConnected && playerColor) {
+		if (isConnected) {
 			colorActions.registerPlayer(colorStore).catch(console.error);
 		}
-	}, [isConnected, playerColor, colorStore]);
+	}, [isConnected, colorStore]);
 
 	// Generate QR code URL with player's Kokimoki ID AND color
 	const qrCodeUrl = `${window.location.origin}/join?playerCode=${kmClient.id}&color=${playerColor}`;
@@ -112,7 +112,7 @@ export const ColorSortingView: React.FC = () => {
 		setShowScanner(false);
 	};
 
-	if (!playerColor || !roundActive || !isConnected) {
+	if (!isConnected) {
 		return (
 			<div className="flex h-full flex-col items-center justify-center">
 				<p className="text-lg">{config.loading}</p>
@@ -192,4 +192,20 @@ export const ColorSortingView: React.FC = () => {
 			)}
 		</div>
 	);
+};
+
+// Wrapper component that handles playerColor being undefined
+export const ColorSortingView: React.FC = () => {
+	const { playerColors, roundActive } = useSnapshot(globalStore.proxy);
+	const playerColor = playerColors[kmClient.id];
+
+	if (!playerColor || !roundActive) {
+		return (
+			<div className="flex h-full flex-col items-center justify-center">
+				<p className="text-lg">{config.loading}</p>
+			</div>
+		);
+	}
+
+	return <ColorSortingViewInner playerColor={playerColor} />;
 };

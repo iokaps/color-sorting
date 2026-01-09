@@ -85,7 +85,7 @@ const App: React.FC = () => {
 				) : !hasColorAssignment ? (
 					<ColorAssignmentView />
 				) : roundActive ? (
-					<ColorSortingView />
+					<ColorSortingView key={`sorting-${playerColor}-${roundNumber}`} />
 				) : roundNumber > 0 ? (
 					<ColorResultsView />
 				) : null}
