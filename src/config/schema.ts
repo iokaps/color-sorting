@@ -61,7 +61,7 @@ export const schema = z.object({
 	colorYellow: z.string().default('Gold'),
 	colorPurple: z.string().default('Purple'),
 	roundDurationSeconds: z.number().default(90),
-	numberOfColors: z.number().min(1).max(5).default(4),
+	numberOfColors: z.number().min(1).max(10).default(5),
 	winnerAnnouncement: z
 		.string()
 		.default('🎉 {color} wins this round with {count} connected!'),

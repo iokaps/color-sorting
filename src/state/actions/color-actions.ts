@@ -11,7 +11,15 @@ export const colorActions = {
 	 * Clear all edges and players from a color faction (called at start of each round)
 	 */
 	async clearFaction(store: KokimokiStore<ColorFactionState>): Promise<void> {
+		if (!store) return;
+
 		try {
+			// Check if store has valid proxy before transacting
+			if (!store.proxy) {
+				console.warn('Cannot clear faction: store proxy is undefined');
+				return;
+			}
+
 			await kmClient.transact([store], ([state]) => {
 				// Initialize state if undefined (defensive)
 				if (!state) return;
@@ -28,6 +36,10 @@ export const colorActions = {
 				error instanceof Error &&
 				error.message?.includes('Room not joined')
 			) {
+				return;
+			}
+			// Also suppress "not found" errors which are expected during cleanup
+			if (error instanceof Error && error.message?.includes('not found')) {
 				return;
 			}
 			throw error;
@@ -125,6 +137,8 @@ export const colorActions = {
 	 * This reads from the centralized edges so any client gets the full graph
 	 */
 	calculateLargestFaction(store: KokimokiStore<ColorFactionState>): number {
+		if (!store || !store.proxy) return 1;
+
 		const state = store.proxy;
 		if (!state?.players) return 1;
 		if (Object.keys(state.players).length === 0) return 1;
@@ -134,15 +148,17 @@ export const colorActions = {
 		const allPlayerIds = new Set(Object.keys(state.players));
 
 		// Process all edges to build the graph
-		for (const edgeKey of Object.keys(state.edges)) {
-			const [a, b] = parseEdgeKey(edgeKey);
-			allPlayerIds.add(a);
-			allPlayerIds.add(b);
+		if (state.edges) {
+			for (const edgeKey of Object.keys(state.edges)) {
+				const [a, b] = parseEdgeKey(edgeKey);
+				allPlayerIds.add(a);
+				allPlayerIds.add(b);
 
-			if (!adjacencyList.has(a)) adjacencyList.set(a, new Set());
-			if (!adjacencyList.has(b)) adjacencyList.set(b, new Set());
-			adjacencyList.get(a)!.add(b);
-			adjacencyList.get(b)!.add(a);
+				if (!adjacencyList.has(a)) adjacencyList.set(a, new Set());
+				if (!adjacencyList.has(b)) adjacencyList.set(b, new Set());
+				adjacencyList.get(a)!.add(b);
+				adjacencyList.get(b)!.add(a);
+			}
 		}
 
 		// Find largest connected component using iterative DFS (prevents stack overflow)
@@ -179,6 +195,8 @@ export const colorActions = {
 	 * @returns Array of cluster sizes sorted largest to smallest
 	 */
 	getAllFactionClusters(store: KokimokiStore<ColorFactionState>): number[] {
+		if (!store || !store.proxy) return [];
+
 		const state = store.proxy;
 		if (!state?.players) return [];
 		if (Object.keys(state.players).length === 0) return [];
@@ -188,15 +206,17 @@ export const colorActions = {
 		const allPlayerIds = new Set(Object.keys(state.players));
 
 		// Process all edges to build the graph
-		for (const edgeKey of Object.keys(state.edges)) {
-			const [a, b] = parseEdgeKey(edgeKey);
-			allPlayerIds.add(a);
-			allPlayerIds.add(b);
+		if (state.edges) {
+			for (const edgeKey of Object.keys(state.edges)) {
+				const [a, b] = parseEdgeKey(edgeKey);
+				allPlayerIds.add(a);
+				allPlayerIds.add(b);
 
-			if (!adjacencyList.has(a)) adjacencyList.set(a, new Set());
-			if (!adjacencyList.has(b)) adjacencyList.set(b, new Set());
-			adjacencyList.get(a)!.add(b);
-			adjacencyList.get(b)!.add(a);
+				if (!adjacencyList.has(a)) adjacencyList.set(a, new Set());
+				if (!adjacencyList.has(b)) adjacencyList.set(b, new Set());
+				adjacencyList.get(a)!.add(b);
+				adjacencyList.get(b)!.add(a);
+			}
 		}
 
 		// Find all connected components using iterative DFS

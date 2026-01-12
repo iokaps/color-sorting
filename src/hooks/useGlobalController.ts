@@ -81,6 +81,8 @@ export function useGlobalController() {
 						);
 						try {
 							await kmClient.join(colorStoresRef.current[color]);
+							// Wait a brief moment for state to sync after joining
+							await new Promise((resolve) => setTimeout(resolve, 100));
 						} catch (error) {
 							if (
 								error instanceof Error &&
@@ -88,21 +90,19 @@ export function useGlobalController() {
 							) {
 								console.warn(`Could not join store ${storeName}:`, error);
 							}
+							return null;
 						}
 					}
 					return colorStoresRef.current[color];
 				});
 
 				const stores = await Promise.all(storePromises);
+				// Filter out failed stores (null values)
+				const validStores = stores.filter((store) => store !== null);
 
-				// Clear all stores in parallel
+				// Clear all valid stores in parallel
 				await Promise.all(
-					stores.map((store) => {
-						if (store) {
-							return colorActions.clearFaction(store);
-						}
-						return Promise.resolve();
-					})
+					validStores.map((store) => colorActions.clearFaction(store))
 				);
 			} catch (error) {
 				console.error('Error clearing color stores:', error);
@@ -151,6 +151,8 @@ export function useGlobalController() {
 									);
 								try {
 									await kmClient.join(colorStoresRef.current[color]);
+									// Wait a brief moment for state to sync after joining
+									await new Promise((resolve) => setTimeout(resolve, 100));
 								} catch (error) {
 									if (
 										error instanceof Error &&
@@ -158,15 +160,18 @@ export function useGlobalController() {
 									) {
 										console.warn(`Could not join store ${storeName}:`, error);
 									}
+									return { color, store: null };
 								}
 							}
 							return { color, store: colorStoresRef.current[color] };
 						});
 
 						const stores = await Promise.all(storePromises);
+						// Filter out failed stores
+						const validStores = stores.filter((s) => s.store !== null);
 
 						// Calculate all faction sizes (synchronous now with iterative DFS)
-						for (const { color, store } of stores) {
+						for (const { color, store } of validStores) {
 							if (store) {
 								results[color] = colorActions.calculateLargestFaction(store);
 							}

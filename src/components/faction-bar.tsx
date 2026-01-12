@@ -51,15 +51,19 @@ export const FactionBar: React.FC<FactionBarProps> = ({
 				{/* Largest faction segment */}
 				<div
 					className={cn(
-						'relative flex items-center justify-center rounded px-2 py-1 font-bold text-white transition-all duration-300'
+						'relative flex items-center justify-center rounded px-2 py-1 font-bold transition-all duration-300'
 					)}
 					style={{
 						backgroundColor: color,
 						width: `${Math.max(5, largestPercent)}%`,
-						minWidth: '60px'
+						minWidth: '60px',
+						color: '#ffffff',
+						textShadow: '0 1px 2px rgba(0,0,0,0.5)'
 					}}
 				>
-					<span className="text-center text-sm">{largestCluster}</span>
+					<span className="text-center text-sm font-semibold">
+						{largestCluster}
+					</span>
 					<span className="absolute -top-6 left-1/2 -translate-x-1/2 text-lg">
 						⭐
 					</span>
@@ -73,17 +77,21 @@ export const FactionBar: React.FC<FactionBarProps> = ({
 							<div
 								key={idx}
 								className={cn(
-									'flex items-center justify-center rounded px-1 py-1 font-semibold text-white transition-all duration-300'
+									'flex items-center justify-center rounded px-1 py-1 font-semibold transition-all duration-300'
 								)}
 								style={{
 									backgroundColor: color,
 									opacity: 0.6,
 									width: `${Math.max(3, (size / totalPlayers) * 100)}%`,
-									minWidth: '24px'
+									minWidth: '24px',
+									color: '#ffffff',
+									textShadow: '0 1px 2px rgba(0,0,0,0.5)'
 								}}
 								title={`Cluster: ${size} players`}
 							>
-								{size > 2 && <span className="text-xs">{size}</span>}
+								{size > 2 && (
+									<span className="text-xs font-semibold">{size}</span>
+								)}
 							</div>
 						))}
 

@@ -89,7 +89,7 @@ colorGreen: 'Emerald'
 colorYellow: 'Gold'
 colorPurple: 'Purple'
 roundDurationSeconds: 90
-numberOfColors: 4
+numberOfColors: 5
 winnerAnnouncement: '🎉 {color} wins this round with {count} connected!'
 roundResultsMd: 'Round {roundNumber} Results'
 # Color naming (customization)
