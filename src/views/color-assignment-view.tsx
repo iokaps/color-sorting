@@ -1,16 +1,10 @@
 import { config } from '@/config';
 import { kmClient } from '@/services/km-client';
-import { globalStore, type ColorName } from '@/state/stores/global-store';
+import { globalStore } from '@/state/stores/global-store';
+import { getColorClass } from '@/utils/color-utils';
 import { useSnapshot } from '@kokimoki/app';
 import * as React from 'react';
 import Markdown from 'react-markdown';
-
-const COLOR_CLASSES: Record<ColorName, string> = {
-	red: 'bg-rose-600',
-	blue: 'bg-blue-700',
-	green: 'bg-emerald-600',
-	yellow: 'bg-amber-600'
-};
 
 export const ColorAssignmentView: React.FC = () => {
 	const { playerColors, colorNames } = useSnapshot(globalStore.proxy);
@@ -33,7 +27,7 @@ export const ColorAssignmentView: React.FC = () => {
 		<div className="flex h-full w-full flex-col items-center justify-center space-y-6 px-4 py-8 sm:space-y-8 sm:py-12">
 			{/* Large color card */}
 			<div
-				className={`flex h-40 w-40 items-center justify-center rounded-3xl shadow-2xl sm:h-64 sm:w-64 ${COLOR_CLASSES[playerColor]}`}
+				className={`flex h-40 w-40 items-center justify-center rounded-3xl shadow-2xl sm:h-64 sm:w-64 ${getColorClass(playerColor)}`}
 			>
 				<div className="text-center">
 					<p className="text-lg font-light text-white/80 sm:text-2xl">

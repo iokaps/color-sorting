@@ -1,10 +1,9 @@
 import { kmClient } from '@/services/km-client';
+import { generateColorArray } from '@/utils/color-utils';
 import type { KokimokiStore } from '@kokimoki/app';
 import type { ColorFactionState } from '../stores/color-store';
 import { globalStore, type ColorName } from '../stores/global-store';
 import { colorActions } from './color-actions';
-
-const COLORS: ColorName[] = ['red', 'blue', 'green', 'yellow'];
 
 /**
  * Fisher-Yates shuffle for unbiased randomization (O(n) time, O(1) extra space)
@@ -25,16 +24,18 @@ function shuffleArray<T>(array: T[]): T[] {
  */
 function assignColorsWithConstraints(
 	playerIds: string[],
-	previousColors: Record<string, ColorName>
+	previousColors: Record<string, ColorName>,
+	numberOfColors: number
 ): Record<string, ColorName> {
+	const COLORS = generateColorArray(numberOfColors);
 	const shuffledPlayers = shuffleArray(playerIds);
 	const newColors: Record<string, ColorName> = {};
-	const colorCounts: Record<ColorName, number> = {
-		red: 0,
-		blue: 0,
-		green: 0,
-		yellow: 0
-	};
+	const colorCounts: Record<ColorName, number> = {};
+
+	// Initialize color counts for all available colors
+	for (const color of COLORS) {
+		colorCounts[color] = 0;
+	}
 
 	// For each player, assign the least-used color that's different from their previous
 	for (const playerId of shuffledPlayers) {
@@ -61,6 +62,10 @@ export const roundActions = {
 	async assignColorsAndStartRound(
 		colorStores?: Record<ColorName, KokimokiStore<ColorFactionState>>
 	) {
+		// Get numberOfColors first to determine COLORS
+		const numberOfColors = globalStore.proxy.numberOfColors || 4;
+		const COLORS = generateColorArray(numberOfColors);
+
 		// Clear all color faction stores from previous round
 		if (colorStores) {
 			await Promise.all(
@@ -79,8 +84,13 @@ export const roundActions = {
 			// Get list of online player IDs
 			const onlinePlayerIds = Array.from(globalStore.connections.clientIds);
 
-			// Reset round results and game complete flag
-			globalState.roundResults = { red: 0, blue: 0, green: 0, yellow: 0 };
+			// Reset round results based on configured numberOfColors
+			const emptyResults: Record<ColorName, number> = {};
+			const COLORS_INNER = generateColorArray(globalState.numberOfColors);
+			for (const color of COLORS_INNER) {
+				emptyResults[color] = 0;
+			}
+			globalState.roundResults = emptyResults;
 			globalState.gameComplete = false;
 
 			// Store previous colors before reassignment
@@ -91,7 +101,8 @@ export const roundActions = {
 			// - Different color from previous round
 			globalState.playerColors = assignColorsWithConstraints(
 				onlinePlayerIds,
-				previousColors
+				previousColors,
+				globalState.numberOfColors
 			);
 
 			// Initialize round state
@@ -104,13 +115,15 @@ export const roundActions = {
 	async endRound(
 		colorStores: Record<ColorName, KokimokiStore<ColorFactionState>>
 	) {
+		// Get numberOfColors to determine COLORS
+		const numberOfColors = globalStore.proxy.numberOfColors || 4;
+		const COLORS = generateColorArray(numberOfColors);
+
 		// Calculate largest faction size for each color (synchronous with iterative DFS)
-		const results: Record<ColorName, number> = {
-			red: 0,
-			blue: 0,
-			green: 0,
-			yellow: 0
-		};
+		const results: Record<ColorName, number> = {};
+		for (const color of COLORS) {
+			results[color] = 0;
+		}
 
 		for (const color of COLORS) {
 			const store = colorStores[color];
@@ -120,10 +133,12 @@ export const roundActions = {
 			}
 		}
 
-		// Find winning color
-		const winningColor = COLORS.reduce((prev, curr) =>
-			results[curr] > results[prev] ? curr : prev
+		// Find winning color(s) - support ties
+		const maxSize = Math.max(...COLORS.map((c) => results[c]), 0);
+		const winningColors = COLORS.filter(
+			(c) => results[c] === maxSize && maxSize > 0
 		);
+		const winBonus = globalStore.proxy.winBonus || 10;
 
 		// Update global state with results and history
 		await kmClient.transact([globalStore], ([globalState]) => {
@@ -132,9 +147,10 @@ export const roundActions = {
 
 			// Save round result to history
 			globalState.roundHistory[globalState.roundNumber.toString()] = {
-				winningColor,
-				winningColorName: globalState.colorNames[winningColor],
-				connectionCount: results[winningColor]
+				winningColors,
+				winningColorNames: winningColors.map((c) => globalState.colorNames[c]),
+				largestFactionSize: maxSize,
+				bonusPointsPerPlayer: winBonus
 			};
 
 			// Check if all rounds complete
@@ -167,7 +183,12 @@ export const roundActions = {
 		await kmClient.transact([globalStore], ([globalState]) => {
 			globalState.roundNumber = 0;
 			globalState.roundHistory = {};
-			globalState.roundResults = { red: 0, blue: 0, green: 0, yellow: 0 };
+			const resetResults: Record<ColorName, number> = {};
+			const COLORS = generateColorArray(globalState.numberOfColors);
+			for (const color of COLORS) {
+				resetResults[color] = 0;
+			}
+			globalState.roundResults = resetResults;
 			globalState.playerColors = {};
 			globalState.gameComplete = false;
 		});

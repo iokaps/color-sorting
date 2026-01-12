@@ -1,31 +1,23 @@
 import { config } from '@/config';
 import { kmClient } from '@/services/km-client';
 import { roundActions } from '@/state/actions/round-actions';
-import { globalStore, type ColorName } from '@/state/stores/global-store';
+import { globalStore } from '@/state/stores/global-store';
+import { getColorClass } from '@/utils/color-utils';
 import { useSnapshot } from '@kokimoki/app';
 import { useKmConfettiContext } from '@kokimoki/shared';
 import { RotateCcw, Trophy } from 'lucide-react';
 import * as React from 'react';
 
-const COLOR_CLASSES: Record<ColorName, string> = {
-	red: 'bg-rose-600',
-	blue: 'bg-blue-700',
-	green: 'bg-emerald-600',
-	yellow: 'bg-amber-600'
-};
-
-const COLOR_EMOJIS: Record<ColorName, string> = {
-	red: '🔴',
-	blue: '🔵',
-	green: '🟢',
-	yellow: '🟡'
-};
-
 export const FinalResultsView: React.FC = () => {
-	const { roundHistory, totalRounds } = useSnapshot(globalStore.proxy);
+	const { roundHistory, playerScores, colorNames } = useSnapshot(
+		globalStore.proxy
+	);
 	const isHost = kmClient.clientContext.mode === 'host';
 	const confetti = useKmConfettiContext();
 	const [buttonCooldown, setButtonCooldown] = React.useState(false);
+	const [expandedPlayer, setExpandedPlayer] = React.useState<string | null>(
+		null
+	);
 
 	// Trigger confetti on mount (only once)
 	React.useEffect(() => {
@@ -54,32 +46,25 @@ export const FinalResultsView: React.FC = () => {
 		}
 	};
 
-	// Get sorted round results
-	const sortedRounds = Object.entries(roundHistory)
+	// Get sorted round results (with defensive check for undefined roundHistory)
+	const sortedRounds = (roundHistory ? Object.entries(roundHistory) : [])
 		.sort(([a], [b]) => Number(a) - Number(b))
 		.map(([roundNum, result]) => ({
 			roundNumber: Number(roundNum),
 			...result
 		}));
 
-	// Count wins per color
-	const winCounts: Record<ColorName, number> = {
-		red: 0,
-		blue: 0,
-		green: 0,
-		yellow: 0
-	};
-	sortedRounds.forEach((result) => {
-		winCounts[result.winningColor]++;
-	});
+	// Get leaderboard sorted by total score
+	const leaderboard = Object.entries(playerScores)
+		.map(([clientId, playerScore]) => ({
+			clientId,
+			...playerScore
+		}))
+		.sort((a, b) => b.totalScore - a.totalScore);
 
-	// Find overall winner
-	const overallWinner = (
-		Object.entries(winCounts) as [ColorName, number][]
-	).reduce(
-		(prev, curr) => (curr[1] > prev[1] ? curr : prev),
-		['red' as ColorName, 0]
-	);
+	// Find top scorer(s) for tie handling
+	const topScore = leaderboard[0]?.totalScore || 0;
+	const topPlayers = leaderboard.filter((p) => p.totalScore === topScore);
 
 	return (
 		<div className="flex h-full w-full flex-col items-center justify-center gap-3 overflow-auto px-2 py-3 sm:gap-5 sm:px-4 sm:py-6">
@@ -94,66 +79,182 @@ export const FinalResultsView: React.FC = () => {
 				</p>
 			</div>
 
-			{/* Overall winner banner */}
-			{overallWinner[1] > 0 && (
-				<div
-					className={`w-full max-w-md rounded-xl px-4 py-3 text-center text-white shadow-lg sm:rounded-2xl sm:px-6 sm:py-4 ${COLOR_CLASSES[overallWinner[0]]}`}
-				>
-					<p className="text-2xl sm:text-4xl">
-						{COLOR_EMOJIS[overallWinner[0]]}
+			{/* Overall winner banner with tie handling */}
+			{topScore > 0 && (
+				<div className="w-full max-w-md rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500 px-4 py-3 text-center shadow-lg sm:rounded-2xl sm:px-6 sm:py-4">
+					<p className="text-sm font-semibold text-slate-800 sm:text-base">
+						{topPlayers.length > 1 ? 'Tied for First!' : 'Winner!'}
 					</p>
-					<p className="mt-1 text-base font-bold sm:text-xl">
-						{sortedRounds.find((r) => r.winningColor === overallWinner[0])
-							?.winningColorName || overallWinner[0]}{' '}
-						wins with {overallWinner[1]}{' '}
-						{overallWinner[1] === 1 ? 'round' : 'rounds'}!
-					</p>
+					<div className="mt-2 space-y-1">
+						{topPlayers.map((player) => (
+							<div key={player.clientId}>
+								<p className="text-lg font-bold text-white sm:text-2xl">
+									{player.name}
+								</p>
+								<p className="text-sm font-semibold text-slate-800 sm:text-base">
+									{player.totalScore} points
+								</p>
+							</div>
+						))}
+					</div>
 				</div>
 			)}
 
-			{/* Round history */}
-			<div className="w-full max-w-md space-y-2 sm:space-y-3">
+			{/* Leaderboard */}
+			<div className="w-full max-w-2xl space-y-2 sm:space-y-3">
 				<h2 className="text-center text-sm font-semibold text-slate-700 sm:text-base">
-					Round History ({sortedRounds.length}/{totalRounds})
+					Leaderboard
 				</h2>
 
 				<div className="space-y-1.5 sm:space-y-2">
-					{sortedRounds.map((result) => (
+					{leaderboard.map((player, index) => (
 						<div
-							key={result.roundNumber}
-							className={`flex items-center justify-between rounded-lg px-3 py-2 text-white shadow-md sm:rounded-xl sm:px-4 sm:py-3 ${COLOR_CLASSES[result.winningColor]}`}
+							key={player.clientId}
+							className="rounded-lg bg-white shadow-md"
 						>
-							<div className="flex items-center gap-2">
-								<span className="text-lg sm:text-2xl">
-									{COLOR_EMOJIS[result.winningColor]}
-								</span>
-								<div>
-									<p className="text-[10px] font-medium opacity-90 sm:text-xs">
-										{config.roundWinnerLabel.replace(
-											'{roundNumber}',
-											result.roundNumber.toString()
-										)}
-									</p>
-									<p className="text-sm font-bold sm:text-base">
-										{result.winningColorName}
-									</p>
+							{/* Main row - clickable to expand */}
+							<button
+								type="button"
+								onClick={() =>
+									setExpandedPlayer(
+										expandedPlayer === player.clientId ? null : player.clientId
+									)
+								}
+								className="w-full px-3 py-2 text-left hover:bg-slate-50 sm:px-4 sm:py-3"
+							>
+								<div className="flex items-center justify-between gap-3">
+									<div className="flex min-w-0 items-center gap-2">
+										{/* Medal for top 3 */}
+										<div className="flex w-8 items-center justify-center text-lg font-bold sm:w-10">
+											{index === 0 && '🥇'}
+											{index === 1 && '🥈'}
+											{index === 2 && '🥉'}
+											{index > 2 && (
+												<span className="text-xs">{index + 1}</span>
+											)}
+										</div>
+										<div className="min-w-0">
+											<p className="truncate font-semibold text-slate-900 sm:text-base">
+												{player.name}
+											</p>
+											<p className="text-xs text-slate-500 sm:text-sm">
+												{Object.keys(player.roundScores).length} rounds played
+											</p>
+										</div>
+									</div>
+									<div className="text-right">
+										<p className="text-lg font-bold text-slate-900 sm:text-xl">
+											{player.totalScore}
+										</p>
+										<p className="text-xs text-slate-500 sm:text-sm">
+											Total points
+										</p>
+									</div>
 								</div>
-							</div>
-							<div className="text-right">
-								<p className="text-base font-bold sm:text-lg">
-									{result.connectionCount}
-								</p>
-								<p className="text-[10px] opacity-80 sm:text-xs">
-									{config.connectionsLabel.replace(
-										'{count}',
-										result.connectionCount.toString()
-									)}
-								</p>
-							</div>
+							</button>
+
+							{/* Expanded round details */}
+							{expandedPlayer === player.clientId && (
+								<div className="border-t border-slate-200 bg-slate-50 px-3 py-2 sm:px-4 sm:py-3">
+									<div className="space-y-1.5 sm:space-y-2">
+										<h4 className="text-xs font-semibold text-slate-700 sm:text-sm">
+											Round Breakdown:
+										</h4>
+										{sortedRounds.map((round) => {
+											const roundScore =
+												player.roundScores[round.roundNumber.toString()];
+											if (!roundScore) return null;
+
+											const colorBgClass = getColorClass(roundScore.color);
+											const isWinner = round.winningColors.includes(
+												roundScore.color
+											);
+
+											return (
+												<div
+													key={round.roundNumber}
+													className={`flex items-center justify-between rounded px-2 py-1.5 text-xs text-white sm:px-3 sm:py-2 sm:text-sm ${colorBgClass}`}
+												>
+													<div>
+														<p className="font-medium">
+															Round {round.roundNumber}:{' '}
+															<span className="font-bold">
+																{colorNames[roundScore.color]}
+															</span>
+														</p>
+														<p className="text-[10px] opacity-90 sm:text-xs">
+															{roundScore.connectionPoints} connection
+															{roundScore.connectionPoints !== 1
+																? 's'
+																: ''}{' '}
+															{isWinner && `+ ${roundScore.bonusPoints} bonus`}
+														</p>
+													</div>
+													<div className="text-right">
+														<p className="font-bold">
+															+{roundScore.totalRoundPoints}
+														</p>
+													</div>
+												</div>
+											);
+										})}
+									</div>
+								</div>
+							)}
 						</div>
 					))}
 				</div>
 			</div>
+
+			{/* Round summary */}
+			{sortedRounds.length > 0 && (
+				<div className="w-full max-w-md space-y-2 sm:space-y-3">
+					<h3 className="text-center text-sm font-semibold text-slate-700 sm:text-base">
+						Round Results
+					</h3>
+					<div className="space-y-1.5 sm:space-y-2">
+						{sortedRounds.map((result) => (
+							<div
+								key={result.roundNumber}
+								className="rounded-lg bg-white px-3 py-2 shadow-md sm:px-4 sm:py-3"
+							>
+								<div className="flex items-center justify-between gap-2">
+									<div>
+										<p className="text-[10px] font-medium text-slate-600 sm:text-xs">
+											{config.roundWinnerLabel.replace(
+												'{roundNumber}',
+												result.roundNumber.toString()
+											)}
+										</p>
+										{result.winningColors.length > 1 ? (
+											<p className="text-xs font-bold text-slate-900 sm:text-sm">
+												Tie: {result.winningColorNames.join(', ')}
+											</p>
+										) : (
+											<p className="text-xs font-bold text-slate-900 sm:text-sm">
+												Winner:{' '}
+												<span
+													className={`${getColorClass(result.winningColors[0])}`}
+												>
+													{result.winningColorNames[0]}
+												</span>
+											</p>
+										)}
+									</div>
+									<div className="text-right">
+										<p className="text-base font-bold text-slate-900 sm:text-lg">
+											{result.largestFactionSize}
+										</p>
+										<p className="text-[10px] text-slate-600 sm:text-xs">
+											largest group
+										</p>
+									</div>
+								</div>
+							</div>
+						))}
+					</div>
+				</div>
+			)}
 
 			{/* Play again button (host only) */}
 			{isHost && (

@@ -2,28 +2,40 @@ import { config } from '@/config';
 import { kmClient } from '@/services/km-client';
 import { globalActions } from '@/state/actions/global-actions';
 import { globalStore, type ColorName } from '@/state/stores/global-store';
+import { generateColorArray } from '@/utils/color-utils';
 import { useSnapshot } from '@kokimoki/app';
 import { CirclePlay } from 'lucide-react';
 import * as React from 'react';
 import ReactMarkdown from 'react-markdown';
 
-const COLORS: ColorName[] = ['red', 'blue', 'green', 'yellow'];
-
-const COLOR_CLASSES: Record<ColorName, string> = {
+const COLOR_CLASSES: Record<string, string> = {
 	red: 'bg-rose-600',
 	blue: 'bg-blue-700',
 	green: 'bg-emerald-600',
-	yellow: 'bg-amber-600'
+	yellow: 'bg-amber-600',
+	purple: 'bg-purple-600',
+	pink: 'bg-pink-600',
+	indigo: 'bg-indigo-600',
+	cyan: 'bg-cyan-600',
+	orange: 'bg-orange-600',
+	lime: 'bg-lime-600'
 };
 
 export const ColorNamingView: React.FC = () => {
-	const { colorNames, roundDurationSeconds, logoUrl, totalRounds } =
-		useSnapshot(globalStore.proxy);
+	const {
+		colorNames,
+		roundDurationSeconds,
+		logoUrl,
+		totalRounds,
+		numberOfColors
+	} = useSnapshot(globalStore.proxy);
 	const [editedNames, setEditedNames] =
 		React.useState<Record<ColorName, string>>(colorNames);
 	const [editedDuration, setEditedDuration] =
 		React.useState(roundDurationSeconds);
 	const [editedTotalRounds, setEditedTotalRounds] = React.useState(totalRounds);
+	const [editedNumberOfColors, setEditedNumberOfColors] =
+		React.useState(numberOfColors);
 	const [logoFile, setLogoFile] = React.useState<File | null>(null);
 	const [logoPreview, setLogoPreview] = React.useState<string | null>(logoUrl);
 	const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -34,8 +46,9 @@ export const ColorNamingView: React.FC = () => {
 		setEditedNames(colorNames);
 		setEditedDuration(roundDurationSeconds);
 		setEditedTotalRounds(totalRounds);
+		setEditedNumberOfColors(numberOfColors);
 		setLogoPreview(logoUrl);
-	}, [colorNames, roundDurationSeconds, totalRounds, logoUrl]);
+	}, [colorNames, roundDurationSeconds, totalRounds, numberOfColors, logoUrl]);
 
 	const handleNameChange = (color: ColorName, name: string) => {
 		setEditedNames((prev) => ({
@@ -49,6 +62,18 @@ export const ColorNamingView: React.FC = () => {
 		if (!isNaN(value) && value > 0) {
 			setEditedDuration(value);
 		}
+	};
+
+	const handleColorCountChange = (newCount: number) => {
+		const validCount = Math.max(1, Math.min(10, newCount));
+		setEditedNumberOfColors(validCount);
+		// Update color names to match new count
+		const newColors = generateColorArray(validCount);
+		const newNames: Record<ColorName, string> = {};
+		newColors.forEach((color) => {
+			newNames[color] = editedNames[color] || colorNames[color] || color;
+		});
+		setEditedNames(newNames);
 	};
 
 	const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,8 +92,16 @@ export const ColorNamingView: React.FC = () => {
 	const handleSave = async () => {
 		setIsSubmitting(true);
 		try {
-			// Update all color names
-			for (const color of COLORS) {
+			// Update number of colors if changed
+			if (editedNumberOfColors !== numberOfColors) {
+				await globalActions.updateNumberOfColors(editedNumberOfColors);
+			}
+
+			// Get the colors for the current selection
+			const colorsToUpdate = generateColorArray(editedNumberOfColors);
+
+			// Update color names that have changed
+			for (const color of colorsToUpdate) {
 				if (editedNames[color] !== colorNames[color]) {
 					await globalActions.updateColorName(color, editedNames[color]);
 				}
@@ -108,17 +141,47 @@ export const ColorNamingView: React.FC = () => {
 		}
 	};
 
+	const currentColors = generateColorArray(editedNumberOfColors);
+
 	return (
 		<div className="space-y-8">
 			<div className="prose max-w-none">
 				<ReactMarkdown>{config.colorNamingMd}</ReactMarkdown>
 			</div>
 
+			{/* Number of Colors Section */}
+			<div className="rounded-xl border border-slate-300 bg-white p-6">
+				<label htmlFor="number-of-colors" className="block text-sm font-medium">
+					Number of Colors
+				</label>
+				<div className="mt-2 flex items-center gap-3">
+					<button
+						type="button"
+						className="km-btn-secondary h-12 w-12 text-xl font-bold"
+						onClick={() => handleColorCountChange(editedNumberOfColors - 1)}
+						disabled={isSubmitting || editedNumberOfColors <= 1}
+					>
+						−
+					</button>
+					<span className="w-16 text-center text-2xl font-bold">
+						{editedNumberOfColors}
+					</span>
+					<button
+						type="button"
+						className="km-btn-secondary h-12 w-12 text-xl font-bold"
+						onClick={() => handleColorCountChange(editedNumberOfColors + 1)}
+						disabled={isSubmitting || editedNumberOfColors >= 10}
+					>
+						+
+					</button>
+				</div>
+			</div>
+
 			{/* Color Names Section */}
 			<div>
 				<h3 className="mb-4 text-lg font-semibold">Color Names</h3>
 				<div className="grid gap-6 sm:grid-cols-2">
-					{COLORS.map((color) => (
+					{currentColors.map((color) => (
 						<div
 							key={color}
 							className="space-y-3 rounded-xl border border-slate-300 bg-white p-6"
@@ -136,7 +199,7 @@ export const ColorNamingView: React.FC = () => {
 							<input
 								id={`color-${color}`}
 								type="text"
-								value={editedNames[color]}
+								value={editedNames[color] || ''}
 								onChange={(e) => handleNameChange(color, e.target.value)}
 								placeholder={colorNames[color]}
 								className="km-input"

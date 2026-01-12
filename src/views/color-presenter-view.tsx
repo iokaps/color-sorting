@@ -1,151 +1,190 @@
+import { FactionBar } from '@/components/faction-bar';
 import { useDynamicStore } from '@/hooks/useDynamicStore';
 import { useServerTimer } from '@/hooks/useServerTime';
 import { colorActions } from '@/state/actions/color-actions';
 import {
 	createColorFactionState,
-	getColorStoreName
+	getColorStoreName,
+	type ColorFactionState
 } from '@/state/stores/color-store';
 import { globalStore, type ColorName } from '@/state/stores/global-store';
-import { useSnapshot } from '@kokimoki/app';
+import { generateColorArray, getColorHex } from '@/utils/color-utils';
+import { useSnapshot, type KokimokiStore } from '@kokimoki/app';
 import { KmTimeCountdown, useKmConfettiContext } from '@kokimoki/shared';
 import * as React from 'react';
 
-const COLOR_CLASSES: Record<ColorName, string> = {
-	red: 'bg-rose-600',
-	blue: 'bg-blue-700',
-	green: 'bg-emerald-600',
-	yellow: 'bg-amber-600'
-};
+interface ColorPresenterInnerProps {
+	colors: ColorName[];
+	colorNames: Record<ColorName, string>;
+	logoUrl: string | null;
+	roundNumber: number;
+	roundStartTimestamp: number;
+	roundActive: boolean;
+	roundDurationSeconds: number;
+	roundResults: Record<ColorName, number>;
+}
 
-const COLOR_EMOJIS: Record<ColorName, string> = {
-	red: '🔴',
-	blue: '🔵',
-	green: '🟢',
-	yellow: '🟡'
-};
-
-const COLORS: ColorName[] = ['red', 'blue', 'green', 'yellow'];
-
-export const ColorPresenterView: React.FC = () => {
-	// Create dynamic stores for each color and track faction counts
-	const {
-		colorNames,
-		logoUrl,
-		roundNumber,
-		roundStartTimestamp,
-		roundActive,
-		roundDurationSeconds,
-		roundResults
-	} = useSnapshot(globalStore.proxy);
-	const serverTime = useServerTimer(250); // Update timer every 250ms for smooth display
+/**
+ * Inner component that initializes stores only for active colors
+ */
+const ColorPresenterInner: React.FC<ColorPresenterInnerProps> = ({
+	colors,
+	colorNames,
+	logoUrl,
+	roundNumber,
+	roundStartTimestamp,
+	roundActive,
+	roundDurationSeconds,
+	roundResults
+}) => {
+	const serverTime = useServerTimer(250);
 	const confetti = useKmConfettiContext();
 	const [confettiTriggered, setConfettiTriggered] = React.useState(false);
 
-	// Calculate elapsed time and remaining time
 	const elapsedMs = Math.max(0, serverTime - roundStartTimestamp);
 	const roundDurationMs = (roundDurationSeconds || 90) * 1000;
 	const remainingMs = Math.max(0, roundDurationMs - elapsedMs);
 
-	// Join all 4 color faction stores - call hooks outside loop
-	const { store: storeRed } = useDynamicStore(
+	// Initialize stores for all 10 colors (unconditional hook calls)
+	const redStore = useDynamicStore(
 		getColorStoreName('red'),
 		createColorFactionState()
 	);
-	const { store: storeBlue } = useDynamicStore(
+	const blueStore = useDynamicStore(
 		getColorStoreName('blue'),
 		createColorFactionState()
 	);
-	const { store: storeGreen } = useDynamicStore(
+	const greenStore = useDynamicStore(
 		getColorStoreName('green'),
 		createColorFactionState()
 	);
-	const { store: storeYellow } = useDynamicStore(
+	const yellowStore = useDynamicStore(
 		getColorStoreName('yellow'),
 		createColorFactionState()
 	);
-
-	const snapshotRed = useSnapshot(storeRed.proxy);
-	const snapshotBlue = useSnapshot(storeBlue.proxy);
-	const snapshotGreen = useSnapshot(storeGreen.proxy);
-	const snapshotYellow = useSnapshot(storeYellow.proxy);
-
-	// Memoize color stores map for faction calculation
-	const colorStores = React.useMemo(
-		() => ({
-			red: storeRed,
-			blue: storeBlue,
-			green: storeGreen,
-			yellow: storeYellow
-		}),
-		[storeRed, storeBlue, storeGreen, storeYellow]
+	const purpleStore = useDynamicStore(
+		getColorStoreName('purple'),
+		createColorFactionState()
+	);
+	const pinkStore = useDynamicStore(
+		getColorStoreName('pink'),
+		createColorFactionState()
+	);
+	const indigoStore = useDynamicStore(
+		getColorStoreName('indigo'),
+		createColorFactionState()
+	);
+	const cyanStore = useDynamicStore(
+		getColorStoreName('cyan'),
+		createColorFactionState()
+	);
+	const orangeStore = useDynamicStore(
+		getColorStoreName('orange'),
+		createColorFactionState()
+	);
+	const limeStore = useDynamicStore(
+		getColorStoreName('lime'),
+		createColorFactionState()
 	);
 
-	// Memoize faction counts - only recalculate when snapshots change
-	// Calculate the LARGEST CONNECTED FACTION, not total players
-	const factionCounts = React.useMemo(() => {
-		const counts: Record<ColorName, number> = {
-			red: 0,
-			blue: 0,
-			green: 0,
-			yellow: 0
-		};
+	// Get snapshots for all colors (unconditional hook calls - required by React Rules of Hooks)
+	// These capture reactive updates from the stores
+	const redSnapshot = useSnapshot(redStore.store.proxy);
+	const blueSnapshot = useSnapshot(blueStore.store.proxy);
+	const greenSnapshot = useSnapshot(greenStore.store.proxy);
+	const yellowSnapshot = useSnapshot(yellowStore.store.proxy);
+	const purpleSnapshot = useSnapshot(purpleStore.store.proxy);
+	const pinkSnapshot = useSnapshot(pinkStore.store.proxy);
+	const indigoSnapshot = useSnapshot(indigoStore.store.proxy);
+	const cyanSnapshot = useSnapshot(cyanStore.store.proxy);
+	const orangeSnapshot = useSnapshot(orangeStore.store.proxy);
+	const limeSnapshot = useSnapshot(limeStore.store.proxy);
 
-		// Force reactivity by accessing snapshots (even though we use stores for calculation)
-		// This ensures recalculation when players/edges change
-		const _triggerReactivity = [
-			Object.keys(snapshotRed.players || {}).length,
-			Object.keys(snapshotRed.edges || {}).length,
-			Object.keys(snapshotBlue.players || {}).length,
-			Object.keys(snapshotBlue.edges || {}).length,
-			Object.keys(snapshotGreen.players || {}).length,
-			Object.keys(snapshotGreen.edges || {}).length,
-			Object.keys(snapshotYellow.players || {}).length,
-			Object.keys(snapshotYellow.edges || {}).length
-		];
-		// Suppress unused variable warning
-		void _triggerReactivity;
+	// Build a map of all stores for easy access
+	const dynamicStoresAll = React.useMemo<
+		Record<ColorName, KokimokiStore<ColorFactionState>>
+	>(
+		() => ({
+			red: redStore.store,
+			blue: blueStore.store,
+			green: greenStore.store,
+			yellow: yellowStore.store,
+			purple: purpleStore.store,
+			pink: pinkStore.store,
+			indigo: indigoStore.store,
+			cyan: cyanStore.store,
+			orange: orangeStore.store,
+			lime: limeStore.store
+		}),
+		[
+			redStore.store,
+			blueStore.store,
+			greenStore.store,
+			yellowStore.store,
+			purpleStore.store,
+			pinkStore.store,
+			indigoStore.store,
+			cyanStore.store,
+			orangeStore.store,
+			limeStore.store
+		]
+	);
 
-		// Calculate largest connected faction for each color
-		for (const color of COLORS) {
-			const store = colorStores[color];
+	// Calculate all faction clusters for active colors (for visualization)
+	const factionClusters = React.useMemo(() => {
+		const clusters: Record<ColorName, number[]> = {};
+
+		for (const color of colors) {
+			const store = dynamicStoresAll[color];
 			if (store) {
-				counts[color] = colorActions.calculateLargestFaction(store);
+				clusters[color] = colorActions.getAllFactionClusters(store);
+			} else {
+				clusters[color] = [];
 			}
 		}
 
-		return counts;
-	}, [snapshotRed, snapshotBlue, snapshotGreen, snapshotYellow, colorStores]);
+		return clusters;
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [
+		colors,
+		dynamicStoresAll,
+		redSnapshot,
+		blueSnapshot,
+		greenSnapshot,
+		yellowSnapshot,
+		purpleSnapshot,
+		pinkSnapshot,
+		indigoSnapshot,
+		cyanSnapshot,
+		orangeSnapshot,
+		limeSnapshot
+	]);
 
 	// Trigger confetti when round ends
 	React.useEffect(() => {
 		if (roundActive || confettiTriggered) {
-			// Reset confetti flag when round becomes active
 			if (roundActive) {
 				setConfettiTriggered(false);
 			}
 			return;
 		}
 
-		// Check if we have results
 		const hasResults = Object.values(roundResults).some((count) => count > 0);
 
 		if (confetti && !confettiTriggered && hasResults) {
 			setConfettiTriggered(true);
-			// Use 'massive' preset for bigger celebration on presenter screen
 			confetti.triggerConfetti({ preset: 'massive' });
 		}
 	}, [roundActive, confetti, confettiTriggered, roundResults]);
 
 	return (
 		<div className="flex h-full w-full max-w-7xl flex-col items-center justify-center space-y-12">
-			{/* Logo display */}
 			{logoUrl && logoUrl.length > 0 && (
 				<div className="mb-4">
 					<img src={logoUrl} alt="Event logo" className="h-32 object-contain" />
 				</div>
 			)}
 
-			{/* Round info and timer */}
 			{roundActive && (
 				<div className="rounded-2xl border border-blue-400/30 bg-blue-50/20 px-8 py-6 text-center backdrop-blur-sm">
 					<p className="text-lg font-semibold text-blue-200">
@@ -162,41 +201,61 @@ export const ColorPresenterView: React.FC = () => {
 				</div>
 			)}
 
-			{/* Large color blocks display - grid layout */}
-			<div className="w-full">
-				<div className="grid w-full grid-cols-2 gap-6 md:gap-8 lg:grid-cols-4">
-					{COLORS.map((color) => (
-						<div
-							key={color}
-							className={`flex flex-col items-center justify-center rounded-2xl px-6 py-10 shadow-2xl lg:rounded-3xl lg:px-8 lg:py-12 ${COLOR_CLASSES[color]} transition-all duration-300 hover:scale-105`}
-						>
-							{/* Color emoji */}
-							<p className="text-5xl lg:text-6xl">{COLOR_EMOJIS[color]}</p>
-
-							{/* Color name */}
-							<p className="mt-3 text-lg font-bold text-white lg:mt-4 lg:text-2xl">
-								{colorNames[color]}
-							</p>
-
-							{/* Faction count */}
-							<p className="mt-4 text-4xl font-bold text-white/90 lg:mt-6 lg:text-5xl">
-								{factionCounts[color]}
-							</p>
-							<p className="text-sm font-semibold text-white/80 lg:text-lg">
-								largest group
-							</p>
-						</div>
-					))}
-				</div>
+			{/* Faction bars display - shows cluster distribution */}
+			<div className="w-full max-w-6xl space-y-3">
+				{colors.map((color) => (
+					<FactionBar
+						key={color}
+						color={getColorHex(color)}
+						colorName={colorNames[color]}
+						clusterSizes={factionClusters[color] || []}
+					/>
+				))}
 			</div>
 
-			{/* Summary */}
+			{/* Summary - total players across all colors */}
 			<div className="rounded-2xl border border-slate-600/50 bg-slate-700/50 px-6 py-4 text-center backdrop-blur-sm lg:px-8 lg:py-6">
 				<p className="text-3xl font-bold text-white lg:text-4xl">
-					{Object.values(factionCounts).reduce((a, b) => a + b, 0)}
+					{colors.reduce((sum, color) => {
+						const clusters = factionClusters[color] || [];
+						return sum + clusters.reduce((a, b) => a + b, 0);
+					}, 0)}
 				</p>
 				<p className="text-base text-slate-300 lg:text-lg">Total connected</p>
 			</div>
 		</div>
+	);
+};
+
+/**
+ * Outer wrapper component that only renders inner component when numberOfColors changes
+ * This ensures we reinitialize hooks when the number of colors changes
+ */
+export const ColorPresenterView: React.FC = () => {
+	const {
+		colorNames,
+		logoUrl,
+		roundNumber,
+		roundStartTimestamp,
+		roundActive,
+		roundDurationSeconds,
+		roundResults,
+		numberOfColors
+	} = useSnapshot(globalStore.proxy);
+
+	const COLORS = generateColorArray(numberOfColors);
+
+	return (
+		<ColorPresenterInner
+			key={numberOfColors}
+			colors={COLORS}
+			colorNames={colorNames}
+			logoUrl={logoUrl}
+			roundNumber={roundNumber}
+			roundStartTimestamp={roundStartTimestamp}
+			roundActive={roundActive}
+			roundDurationSeconds={roundDurationSeconds}
+			roundResults={roundResults}
+		/>
 	);
 };

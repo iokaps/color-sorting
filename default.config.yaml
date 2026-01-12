@@ -87,7 +87,9 @@ colorRed: 'Ruby'
 colorBlue: 'Sapphire'
 colorGreen: 'Emerald'
 colorYellow: 'Gold'
+colorPurple: 'Purple'
 roundDurationSeconds: 90
+numberOfColors: 4
 winnerAnnouncement: '🎉 {color} wins this round with {count} connected!'
 roundResultsMd: 'Round {roundNumber} Results'
 # Color naming (customization)
@@ -109,3 +111,4 @@ roundWinnerLabel: 'Round {roundNumber}'
 connectionsLabel: '{count} connections'
 playAgainButton: 'Play Again'
 gameCompleteMessage: 'All rounds complete!'
+winBonus: 10

@@ -44,5 +44,17 @@ export const globalActions = {
 		await kmClient.transact([globalStore], ([globalState]) => {
 			globalState.logoUrl = logoUrl;
 		});
+	},
+
+	async updateNumberOfColors(numberOfColors: number) {
+		await kmClient.transact([globalStore], ([globalState]) => {
+			globalState.numberOfColors = Math.max(1, Math.min(10, numberOfColors));
+		});
+	},
+
+	async updateWinBonus(bonusPoints: number) {
+		await kmClient.transact([globalStore], ([globalState]) => {
+			globalState.winBonus = Math.max(1, bonusPoints);
+		});
 	}
 };

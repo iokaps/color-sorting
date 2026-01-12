@@ -12,7 +12,7 @@ export const QrScanner: React.FC<QrScannerProps> = ({ onScan, onClose }) => {
 	const [error, setError] = React.useState<string | null>(null);
 	const [isScanning, setIsScanning] = React.useState(true);
 	const codeReaderRef = React.useRef<BrowserMultiFormatReader | null>(null);
-	const isScanningRef = React.useRef(true);
+	const hasDetectedRef = React.useRef(false);
 	const callbackRef = React.useRef(onScan);
 
 	// Update callback ref when onScan changes
@@ -30,23 +30,33 @@ export const QrScanner: React.FC<QrScannerProps> = ({ onScan, onClose }) => {
 				await codeReader.decodeFromVideoDevice(
 					undefined, // use default camera
 					videoRef.current!,
-					(result, err) => {
-						if (!isScanningRef.current) return;
+					(scanResult, err) => {
+						// Skip if we've already detected a code
+						if (hasDetectedRef.current) {
+							return;
+						}
 
-						if (result) {
-							isScanningRef.current = false;
+						if (scanResult) {
+							const text = scanResult.getText();
+
+							// Mark that we detected a code and stop processing
+							hasDetectedRef.current = true;
 							setIsScanning(false);
-							callbackRef.current(result.getText());
+
+							// Call the callback with the detected text
+							callbackRef.current(text);
+							return;
 						}
 						// Ignore errors - they just mean no QR found in frame
 						if (err && err.name !== 'NotFoundException') {
-							console.warn('QR scan error:', err);
+							// Error logged but ignored
 						}
 					}
 				);
 			} catch (err) {
 				const message =
 					err instanceof Error ? err.message : 'Failed to access camera';
+				console.error('[QrScanner] Error starting scan:', message, err);
 				setError(`Camera permission denied: ${message}`);
 				setIsScanning(false);
 			}
@@ -54,16 +64,8 @@ export const QrScanner: React.FC<QrScannerProps> = ({ onScan, onClose }) => {
 
 		startScanning();
 
-		// Capture ref for cleanup
-		const videoElement = videoRef.current;
-
 		return () => {
-			isScanningRef.current = false;
-			// Stop the code reader and release camera
-			if (codeReaderRef.current && videoElement?.srcObject) {
-				const stream = videoElement.srcObject as MediaStream;
-				stream.getTracks().forEach((track) => track.stop());
-			}
+			// Cleanup - scanner resources released automatically
 		};
 	}, []);
 

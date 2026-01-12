@@ -8,17 +8,11 @@ import {
 	getColorStoreName
 } from '@/state/stores/color-store';
 import { globalStore, type ColorName } from '@/state/stores/global-store';
+import { getColorClass } from '@/utils/color-utils';
 import { useSnapshot } from '@kokimoki/app';
 import { KmQrCode } from '@kokimoki/shared';
 import { Scan } from 'lucide-react';
 import * as React from 'react';
-
-const COLOR_CLASSES: Record<ColorName, string> = {
-	red: 'bg-rose-600',
-	blue: 'bg-blue-700',
-	green: 'bg-emerald-600',
-	yellow: 'bg-amber-600'
-};
 
 // Inner component that requires playerColor to be defined
 const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
@@ -37,18 +31,14 @@ const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
 		createColorFactionState()
 	);
 
-	// Get faction data - use players count from centralized store
-	const factionState = useSnapshot(colorStore.proxy);
-	const playerCount = factionState?.players
-		? Object.keys(factionState.players).length
-		: 0;
+	// Get faction data for reactivity - when edges or players change, playerCount updates
+	useSnapshot(colorStore.proxy);
 
-	// Auto-register player in their color faction when connected
-	React.useEffect(() => {
-		if (isConnected) {
-			colorActions.registerPlayer(colorStore).catch(console.error);
-		}
-	}, [isConnected, colorStore]);
+	// Calculate this player's specific faction size (the faction they're part of)
+	const playerCount = colorActions.getPlayerFactionSize(
+		colorStore,
+		kmClient.id
+	);
 
 	// Generate QR code URL with player's Kokimoki ID AND color
 	const qrCodeUrl = `${window.location.origin}/join?playerCode=${kmClient.id}&color=${playerColor}`;
@@ -61,9 +51,17 @@ const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
 
 			// If it's a URL, extract the parameters
 			if (scannedData.includes('playerCode=')) {
-				const url = new URL(scannedData);
-				scannedClientId = url.searchParams.get('playerCode') || scannedData;
-				scannedColor = url.searchParams.get('color');
+				try {
+					const url = new URL(scannedData);
+					scannedClientId = url.searchParams.get('playerCode') || scannedData;
+					scannedColor = url.searchParams.get('color');
+				} catch {
+					setFeedbackType('error');
+					setFeedback('Invalid QR code format');
+					setTimeout(() => setFeedback(null), 2000);
+					setShowScanner(false);
+					return;
+				}
 			}
 
 			// Validate: both players must have the same color
@@ -94,16 +92,15 @@ const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
 
 			if (result.alreadyConnected) {
 				setFeedbackType('info');
-				setFeedback(config.alreadyConnectedMd);
+				setFeedback('Already connected to this player');
 			} else {
 				setFeedbackType('success');
-				setFeedback(`Connected! Group size: ${playerCount + 1}`);
+				setFeedback('✓ Connected! Your group is growing');
 			}
 
-			// Clear feedback after 2 seconds
-			setTimeout(() => setFeedback(null), 2000);
-		} catch (err) {
-			console.error('QR scan error:', err);
+			// Clear feedback after 3 seconds
+			setTimeout(() => setFeedback(null), 3000);
+		} catch {
 			setFeedbackType('error');
 			setFeedback('Failed to connect. Try again.');
 			setTimeout(() => setFeedback(null), 2000);
@@ -125,7 +122,7 @@ const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
 			{/* Color reference + Group size in row */}
 			<div className="flex items-center gap-3">
 				<div
-					className={`flex h-12 w-12 items-center justify-center rounded-lg shadow-md sm:h-14 sm:w-14 sm:rounded-xl ${COLOR_CLASSES[playerColor]}`}
+					className={`flex h-12 w-12 items-center justify-center rounded-lg shadow-md sm:h-14 sm:w-14 sm:rounded-xl ${getColorClass(playerColor)}`}
 				>
 					<p className="text-[10px] font-bold text-white sm:text-xs">
 						{colorNames[playerColor]}
@@ -148,23 +145,33 @@ const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
 				)}
 			</div>
 
-			{/* QR Code section */}
-			<div className="w-full max-w-xs space-y-1 rounded-lg bg-slate-50 p-3 sm:max-w-sm sm:space-y-2 sm:p-4">
-				<p className="text-center text-[10px] font-medium text-slate-600 sm:text-xs">
-					Others scan this code
+			{/* Instructions */}
+			<div className="w-full max-w-xs text-center">
+				<p className="text-xs text-slate-600 sm:text-sm">
+					{config.colorSortingInstructionsMd}
 				</p>
-				<div className="flex justify-center">
-					<KmQrCode data={qrCodeUrl} size={140} />
+			</div>
+
+			{/* QR Code section */}
+			<div className="w-full max-w-xs space-y-2 rounded-xl bg-gradient-to-b from-slate-50 to-slate-100 p-4 shadow-sm sm:max-w-sm sm:p-5">
+				<p className="text-center text-xs font-semibold text-slate-700">
+					Share your code
+				</p>
+				<div className="flex justify-center rounded-lg bg-white p-3">
+					<KmQrCode data={qrCodeUrl} size={150} />
 				</div>
+				<p className="text-center text-[11px] text-slate-500">
+					Others scan this to join your group
+				</p>
 			</div>
 
 			{/* Scan button */}
 			<button
 				type="button"
-				className="km-btn-primary h-10 w-full max-w-xs text-sm sm:h-11 sm:max-w-sm"
+				className="km-btn-primary h-11 w-full max-w-xs text-sm font-semibold sm:max-w-sm"
 				onClick={() => setShowScanner(true)}
 			>
-				<Scan className="size-4" />
+				<Scan className="size-5" />
 				{config.scanQrCodeButton}
 			</button>
 

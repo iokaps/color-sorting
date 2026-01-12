@@ -59,7 +59,9 @@ export const schema = z.object({
 	colorBlue: z.string().default('Sapphire'),
 	colorGreen: z.string().default('Emerald'),
 	colorYellow: z.string().default('Gold'),
+	colorPurple: z.string().default('Purple'),
 	roundDurationSeconds: z.number().default(90),
+	numberOfColors: z.number().min(1).max(5).default(4),
 	winnerAnnouncement: z
 		.string()
 		.default('🎉 {color} wins this round with {count} connected!'),
@@ -83,7 +85,8 @@ export const schema = z.object({
 	roundWinnerLabel: z.string().default('Round {roundNumber}'),
 	connectionsLabel: z.string().default('{count} connections'),
 	playAgainButton: z.string().default('Play Again'),
-	gameCompleteMessage: z.string().default('All rounds complete!')
+	gameCompleteMessage: z.string().default('All rounds complete!'),
+	winBonus: z.number().default(10)
 });
 
 export type Config = z.infer<typeof schema>;

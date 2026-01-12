@@ -1,17 +1,21 @@
 import { kmClient } from '@/services/km-client';
 import { colorActions } from '@/state/actions/color-actions';
+import { scoringActions } from '@/state/actions/scoring-actions';
 import {
 	createColorFactionState,
 	getColorStoreName,
 	type ColorFactionState
 } from '@/state/stores/color-store';
-import { globalStore, type ColorName } from '@/state/stores/global-store';
+import {
+	globalStore,
+	type ColorName,
+	type PlayerRoundScore
+} from '@/state/stores/global-store';
+import { generateColorArray } from '@/utils/color-utils';
 import type { KokimokiStore } from '@kokimoki/app';
 import { useSnapshot } from '@kokimoki/app';
 import { useEffect, useRef } from 'react';
 import { useServerTimer } from './useServerTime';
-
-const COLORS: ColorName[] = ['red', 'blue', 'green', 'yellow'];
 
 /**
  * Hook to control and modify the global state
@@ -22,7 +26,8 @@ export function useGlobalController() {
 		controllerConnectionId,
 		roundActive,
 		roundStartTimestamp,
-		roundNumber
+		roundNumber,
+		numberOfColors
 	} = useSnapshot(globalStore.proxy);
 	const connections = useSnapshot(globalStore.connections);
 	const connectionIds = connections.connectionIds;
@@ -33,6 +38,9 @@ export function useGlobalController() {
 	const colorStoresRef = useRef<
 		Partial<Record<ColorName, KokimokiStore<ColorFactionState>>>
 	>({});
+
+	// Get dynamic colors based on numberOfColors
+	const COLORS = generateColorArray(numberOfColors);
 
 	// Maintain connection that is assigned to be the global controller
 	useEffect(() => {
@@ -50,7 +58,7 @@ export function useGlobalController() {
 			})
 			.then(() => {})
 			.catch(() => {});
-	}, [connectionIds, controllerConnectionId]);
+	}, [connectionIds, controllerConnectionId, numberOfColors]);
 
 	// Clear color stores when a new round starts (global controller responsibility)
 	useEffect(() => {
@@ -102,7 +110,7 @@ export function useGlobalController() {
 		};
 
 		clearAllStores();
-	}, [isGlobalController, roundNumber]);
+	}, [isGlobalController, roundNumber, numberOfColors, COLORS]);
 
 	// Run global controller-specific logic
 	useEffect(() => {
@@ -122,6 +130,7 @@ export function useGlobalController() {
 
 				// Calculate largest faction for each color - PARALLELIZED
 				const calculateRoundResults = async () => {
+					const localCOLORS = generateColorArray(numberOfColors);
 					const results: Record<ColorName, number> = {
 						red: 0,
 						blue: 0,
@@ -131,7 +140,7 @@ export function useGlobalController() {
 
 					try {
 						// Join all color stores in parallel
-						const storePromises = COLORS.map(async (color) => {
+						const storePromises = localCOLORS.map(async (color) => {
 							const storeName = getColorStoreName(color);
 							if (!colorStoresRef.current[color]) {
 								colorStoresRef.current[color] =
@@ -166,22 +175,86 @@ export function useGlobalController() {
 						console.error('Error calculating round results:', error);
 					}
 
-					// Find winning color
-					const winningColor = COLORS.reduce((prev, curr) =>
-						results[curr] > results[prev] ? curr : prev
+					// Find winning color(s) - support ties
+					const maxSize = Math.max(...localCOLORS.map((c) => results[c]), 0);
+					const winningColors: ColorName[] = localCOLORS.filter(
+						(c) => results[c] === maxSize && maxSize > 0
 					);
 
-					// Update global state with results, history, and end the round
+					// Get current state values before transact
+					const currentRoundNumber = globalStore.proxy.roundNumber;
+					const colorNamesMap = globalStore.proxy.colorNames;
+					const winBonus = globalStore.proxy.winBonus || 10;
+
+					// Calculate individual player scores for each color
+					const playerScoresThisRound: Record<string, PlayerRoundScore> = {};
+
+					for (const color of localCOLORS) {
+						const colorStore = colorStoresRef.current[color];
+						if (!colorStore) continue;
+
+						// Get connection points for each player in this color
+						const connectionPoints =
+							scoringActions.calculatePlayerConnectionPoints(colorStore);
+
+						// Get players in winning faction
+						const winningPlayers =
+							scoringActions.getWinningFactionPlayers(colorStore);
+
+						// Score each player in this color
+						for (const [playerId, points] of Object.entries(connectionPoints)) {
+							const isWinner =
+								winningColors.includes(color) && winningPlayers.has(playerId);
+							const bonusPoints = isWinner ? winBonus : 0;
+							const totalRoundPoints = points + bonusPoints;
+
+							playerScoresThisRound[playerId] = {
+								roundNumber: currentRoundNumber,
+								color,
+								colorName: colorNamesMap[color],
+								factionSize: winningPlayers.size,
+								connectionPoints: points,
+								bonusPoints,
+								totalRoundPoints
+							};
+						}
+					}
+
+					// Update global state with results and player scores
 					await kmClient.transact([globalStore], ([globalState]) => {
 						globalState.roundResults = results;
 						globalState.roundActive = false;
 
-						// Save round result to history
+						// Save round result to history (now with all winning colors for ties)
 						globalState.roundHistory[globalState.roundNumber.toString()] = {
-							winningColor,
-							winningColorName: globalState.colorNames[winningColor],
-							connectionCount: results[winningColor]
+							winningColors,
+							winningColorNames: winningColors.map(
+								(c) => globalState.colorNames[c]
+							),
+							largestFactionSize: maxSize,
+							bonusPointsPerPlayer: winBonus
 						};
+
+						// Update individual player scores
+						for (const [playerId, roundScore] of Object.entries(
+							playerScoresThisRound
+						)) {
+							if (!globalState.playerScores[playerId]) {
+								const playerName =
+									globalState.players[playerId]?.name || 'Unknown';
+								globalState.playerScores[playerId] = {
+									name: playerName,
+									totalScore: 0,
+									roundScores: {}
+								};
+							}
+
+							globalState.playerScores[playerId].roundScores[
+								globalState.roundNumber.toString()
+							] = roundScore;
+							globalState.playerScores[playerId].totalScore +=
+								roundScore.totalRoundPoints;
+						}
 
 						// Check if all rounds complete
 						if (globalState.roundNumber >= globalState.totalRounds) {
@@ -196,7 +269,13 @@ export function useGlobalController() {
 			// Reset flag when round ends
 			roundEndedRef.current = false;
 		}
-	}, [isGlobalController, serverTime, roundActive, roundStartTimestamp]);
+	}, [
+		isGlobalController,
+		serverTime,
+		roundActive,
+		roundStartTimestamp,
+		numberOfColors
+	]);
 
 	// Assign colors to late-joining players during active round
 	useEffect(() => {
@@ -214,24 +293,26 @@ export function useGlobalController() {
 			if (playersWithoutColor.length === 0) return;
 
 			// Count current color assignments for balance
-			const colorCounts: Record<ColorName, number> = {
-				red: 0,
-				blue: 0,
-				green: 0,
-				yellow: 0
-			};
+			const colorCounts: Record<ColorName, number> = {};
+			const COLORS = generateColorArray(numberOfColors);
+
+			// Initialize counts for all available colors
+			for (const color of COLORS) {
+				colorCounts[color] = 0;
+			}
 
 			for (const color of Object.values(playerColors)) {
-				if (color) {
+				if (color && color in colorCounts) {
 					colorCounts[color]++;
 				}
 			}
 
 			// Assign colors to late joiners (pick least-used color)
 			await kmClient.transact([globalStore], ([globalState]) => {
+				const localCOLORS = generateColorArray(numberOfColors);
 				for (const playerId of playersWithoutColor) {
 					// Find the color with fewest players
-					const bestColor = COLORS.reduce((best, color) =>
+					const bestColor = localCOLORS.reduce((best, color) =>
 						colorCounts[color] < colorCounts[best] ? color : best
 					);
 
@@ -242,7 +323,13 @@ export function useGlobalController() {
 		};
 
 		assignColorToLateJoiners().catch(console.error);
-	}, [isGlobalController, roundActive, connectionIds]);
+	}, [
+		isGlobalController,
+		roundActive,
+		connectionIds,
+		numberOfColors,
+		serverTime
+	]);
 
 	return isGlobalController;
 }

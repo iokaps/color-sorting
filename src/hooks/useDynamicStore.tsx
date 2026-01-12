@@ -76,7 +76,10 @@ export function useDynamicStore<T extends object>(
 					}
 				})
 				.catch((error) => {
-					console.error(`Failed to join store ${roomName}:`, error);
+					console.error(
+						`[useDynamicStore] Failed to join store ${roomName}:`,
+						error
+					);
 					setConnection({
 						connecting: false,
 						connected: false

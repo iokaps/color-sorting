@@ -1,35 +1,23 @@
 import { config } from '@/config';
 import { kmClient } from '@/services/km-client';
 import { roundActions } from '@/state/actions/round-actions';
-import { globalStore, type ColorName } from '@/state/stores/global-store';
+import { globalStore } from '@/state/stores/global-store';
+import { generateColorArray, getColorClass } from '@/utils/color-utils';
 import { useSnapshot } from '@kokimoki/app';
 import { useKmConfettiContext } from '@kokimoki/shared';
 import { CircleArrowRight } from 'lucide-react';
 import * as React from 'react';
 
-const COLOR_CLASSES: Record<ColorName, string> = {
-	red: 'bg-rose-600',
-	blue: 'bg-blue-700',
-	green: 'bg-emerald-600',
-	yellow: 'bg-amber-600'
-};
-
-const COLOR_EMOJIS: Record<ColorName, string> = {
-	red: '🔴',
-	blue: '🔵',
-	green: '🟢',
-	yellow: '🟡'
-};
-
-const COLORS: ColorName[] = ['red', 'blue', 'green', 'yellow'];
-
 export const ColorResultsView: React.FC = () => {
-	const { roundNumber, roundResults, colorNames } = useSnapshot(
+	const { roundNumber, roundResults, colorNames, numberOfColors } = useSnapshot(
 		globalStore.proxy
 	);
 	const isHost = kmClient.clientContext.mode === 'host';
 	const [buttonCooldown, setButtonCooldown] = React.useState(false);
 	const confetti = useKmConfettiContext();
+
+	// Get dynamic colors based on numberOfColors
+	const COLORS = generateColorArray(numberOfColors);
 
 	// Find winning color
 	const winningColor = COLORS.reduce((prev, curr) =>
@@ -69,7 +57,7 @@ export const ColorResultsView: React.FC = () => {
 		<div className="flex h-full w-full flex-col items-center justify-center gap-3 overflow-auto px-2 py-3 sm:gap-5 sm:px-4 sm:py-6">
 			{/* Winner announcement */}
 			<div
-				className={`w-full max-w-md rounded-xl px-3 py-4 shadow-xl sm:rounded-2xl sm:px-6 sm:py-6 ${COLOR_CLASSES[winningColor]}`}
+				className={`w-full max-w-md rounded-xl px-3 py-4 shadow-xl sm:rounded-2xl sm:px-6 sm:py-6 ${getColorClass(winningColor)}`}
 			>
 				<p className="text-center text-lg font-bold break-words text-white sm:text-2xl">
 					{config.winnerAnnouncement
@@ -91,10 +79,9 @@ export const ColorResultsView: React.FC = () => {
 					{COLORS.map((color) => (
 						<div
 							key={color}
-							className={`rounded-lg px-2 py-2 text-center text-white shadow-md sm:rounded-xl sm:px-4 sm:py-3 ${COLOR_CLASSES[color]}`}
+							className={`rounded-lg px-2 py-2 text-center text-white shadow-md sm:rounded-xl sm:px-4 sm:py-3 ${getColorClass(color)}`}
 						>
-							<p className="text-xl sm:text-2xl">{COLOR_EMOJIS[color]}</p>
-							<p className="text-[10px] font-semibold sm:text-xs">
+							<p className="text-sm font-semibold sm:text-base">
 								{colorNames[color]}
 							</p>
 							<p className="text-lg font-bold sm:text-xl">
