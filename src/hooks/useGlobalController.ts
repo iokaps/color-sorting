@@ -46,7 +46,6 @@ export function useGlobalController() {
 		controllerConnectionId,
 		roundActive,
 		roundStartTimestamp,
-		roundNumber,
 		numberOfColors
 	} = useSnapshot(globalStore.proxy);
 	const connections = useSnapshot(globalStore.connections);
@@ -54,6 +53,7 @@ export function useGlobalController() {
 	const isGlobalController = controllerConnectionId === kmClient.connectionId;
 	const serverTime = useServerTimer(1000); // tick every second
 	const roundEndedRef = useRef(false);
+	const lastRoundStartRef = useRef(0);
 
 	// Get dynamic colors based on numberOfColors
 	const COLORS = generateColorArray(numberOfColors);
@@ -76,8 +76,37 @@ export function useGlobalController() {
 			.catch(() => {});
 	}, [connectionIds, controllerConnectionId, numberOfColors]);
 
-	// Note: Color stores are automatically cleared when ColorPresenterInner remounts
-	// due to the roundNumber changing in its key prop. This triggers useDynamicStore cleanup.
+	// Clear color stores when a new round starts
+	// This clears the connection data so each round starts fresh
+	useEffect(() => {
+		if (!isGlobalController || roundStartTimestamp === 0) return;
+		if (roundStartTimestamp <= lastRoundStartRef.current) return;
+
+		// New round started - clear stores
+		lastRoundStartRef.current = roundStartTimestamp;
+
+		const timeout = setTimeout(async () => {
+			try {
+				const localCOLORS = generateColorArray(numberOfColors);
+
+				// Only clear stores that are in the cache (have been joined)
+				const validStores = localCOLORS
+					.map((color) => colorStoresCache.get(color))
+					.filter((store) => store !== undefined);
+
+				// Clear each store's faction data
+				for (const store of validStores) {
+					if (store) {
+						await colorActions.clearFaction(store);
+					}
+				}
+			} catch {
+				// Silently ignore errors
+			}
+		}, 50); // Wait for stores to be joined
+
+		return () => clearTimeout(timeout);
+	}, [isGlobalController, roundStartTimestamp, numberOfColors]);
 
 	// Run global controller-specific logic
 	useEffect(() => {
