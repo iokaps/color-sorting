@@ -112,70 +112,10 @@ export const roundActions = {
 		});
 	},
 
-	async endRound(
-		colorStores: Record<ColorName, KokimokiStore<ColorFactionState>>
-	) {
-		// Get numberOfColors to determine COLORS
-		const numberOfColors = globalStore.proxy.numberOfColors || 4;
-		const COLORS = generateColorArray(numberOfColors);
-
-		// Calculate largest faction size for each color (synchronous with iterative DFS)
-		const results: Record<ColorName, number> = {};
-		for (const color of COLORS) {
-			results[color] = 0;
-		}
-
-		for (const color of COLORS) {
-			const store = colorStores[color];
-			if (store) {
-				// calculateLargestFaction is now synchronous
-				results[color] = colorActions.calculateLargestFaction(store);
-			}
-		}
-
-		// Find winning color(s) - support ties
-		const maxSize = Math.max(...COLORS.map((c) => results[c]), 0);
-		const winningColors = COLORS.filter(
-			(c) => results[c] === maxSize && maxSize > 0
-		);
-		const winBonus = globalStore.proxy.winBonus || 10;
-
-		// Update global state with results and history
-		await kmClient.transact([globalStore], ([globalState]) => {
-			globalState.roundResults = results;
-			globalState.roundActive = false;
-
-			// Save round result to history
-			globalState.roundHistory[globalState.roundNumber.toString()] = {
-				winningColors,
-				winningColorNames: winningColors.map((c) => globalState.colorNames[c]),
-				largestFactionSize: maxSize,
-				bonusPointsPerPlayer: winBonus
-			};
-
-			// Check if all rounds complete
-			if (globalState.roundNumber >= globalState.totalRounds) {
-				globalState.gameComplete = true;
-			}
-		});
-	},
-
 	async nextRound() {
 		// Reset color factions and prepare for next assignment
 		await kmClient.transact([globalStore], ([globalState]) => {
 			globalState.playerColors = {};
-		});
-	},
-
-	async setRoundNumber(roundNumber: number) {
-		await kmClient.transact([globalStore], ([globalState]) => {
-			globalState.roundNumber = Math.max(0, roundNumber);
-		});
-	},
-
-	async setTotalRounds(totalRounds: number) {
-		await kmClient.transact([globalStore], ([globalState]) => {
-			globalState.totalRounds = Math.max(1, totalRounds);
 		});
 	},
 

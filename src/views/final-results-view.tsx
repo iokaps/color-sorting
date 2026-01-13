@@ -1,7 +1,8 @@
 import { config } from '@/config';
 import { kmClient } from '@/services/km-client';
 import { roundActions } from '@/state/actions/round-actions';
-import { globalStore } from '@/state/stores/global-store';
+import { globalStore, type ColorName } from '@/state/stores/global-store';
+import { cn } from '@/utils/cn';
 import { getColorClass } from '@/utils/color-utils';
 import { useSnapshot } from '@kokimoki/app';
 import { useKmConfettiContext } from '@kokimoki/shared';
@@ -44,6 +45,12 @@ export const FinalResultsView: React.FC = () => {
 			console.error('Failed to reset game:', error);
 			setButtonCooldown(false);
 		}
+	};
+
+	// Helper to get text color based on background color for contrast
+	const getTextColorForBg = (color: ColorName): string => {
+		const lightColors = ['yellow', 'pink', 'cyan', 'lime'];
+		return lightColors.includes(color) ? 'text-slate-900' : 'text-white';
 	};
 
 	// Get sorted round results (with defensive check for undefined roundHistory)
@@ -165,7 +172,6 @@ export const FinalResultsView: React.FC = () => {
 												player.roundScores[round.roundNumber.toString()];
 											if (!roundScore) return null;
 
-											const colorBgClass = getColorClass(roundScore.color);
 											const isWinner = round.winningColors.includes(
 												roundScore.color
 											);
@@ -173,7 +179,11 @@ export const FinalResultsView: React.FC = () => {
 											return (
 												<div
 													key={round.roundNumber}
-													className={`flex items-center justify-between rounded px-2 py-1.5 text-xs text-white sm:px-3 sm:py-2 sm:text-sm ${colorBgClass}`}
+													className={cn(
+														'flex items-center justify-between rounded px-2 py-1.5 text-xs sm:px-3 sm:py-2 sm:text-sm',
+														getColorClass(roundScore.color),
+														getTextColorForBg(roundScore.color as ColorName)
+													)}
 												>
 													<div>
 														<p className="font-medium">
@@ -182,7 +192,7 @@ export const FinalResultsView: React.FC = () => {
 																{colorNames[roundScore.color]}
 															</span>
 														</p>
-														<p className="text-[10px] opacity-90 sm:text-xs">
+														<p className="opacity-80">
 															{roundScore.connectionPoints} connection
 															{roundScore.connectionPoints !== 1
 																? 's'

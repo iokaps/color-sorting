@@ -22,14 +22,14 @@ export function createColorFactionState(): ColorFactionState {
 /**
  * Creates a unique edge key from two player IDs (sorted to ensure consistency)
  */
-export function createEdgeKey(playerA: string, playerB: string): string {
+function createEdgeKey(playerA: string, playerB: string): string {
 	return playerA < playerB ? `${playerA}:${playerB}` : `${playerB}:${playerA}`;
 }
 
 /**
  * Parses an edge key back into player IDs
  */
-export function parseEdgeKey(edgeKey: string): [string, string] {
+function parseEdgeKey(edgeKey: string): [string, string] {
 	const [a, b] = edgeKey.split(':');
 	return [a, b];
 }
@@ -37,3 +37,6 @@ export function parseEdgeKey(edgeKey: string): [string, string] {
 export function getColorStoreName(color: ColorName): string {
 	return `color-${color}-faction`;
 }
+
+// Export for use in color-actions
+export { createEdgeKey, parseEdgeKey };

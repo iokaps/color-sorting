@@ -1,6 +1,7 @@
 import { QrScanner } from '@/components/qr-scanner';
 import { config } from '@/config';
 import { useDynamicStore } from '@/hooks/useDynamicStore';
+import { registerColorStore } from '@/hooks/useGlobalController';
 import { kmClient } from '@/services/km-client';
 import { colorActions } from '@/state/actions/color-actions';
 import {
@@ -30,6 +31,13 @@ const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
 		getColorStoreName(playerColor),
 		createColorFactionState()
 	);
+
+	// Register store with global controller for access in useGlobalController hook
+	React.useEffect(() => {
+		if (isConnected) {
+			registerColorStore(playerColor, colorStore);
+		}
+	}, [playerColor, colorStore, isConnected]);
 
 	// Get faction data for reactivity - when edges or players change, playerCount updates
 	useSnapshot(colorStore.proxy);

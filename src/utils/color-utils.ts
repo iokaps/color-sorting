@@ -30,19 +30,6 @@ const COLOR_HEX: Record<string, string> = {
 	lime: '#65a30d'
 };
 
-const COLOR_NAMES: Record<string, string> = {
-	red: 'Red',
-	blue: 'Blue',
-	green: 'Green',
-	yellow: 'Yellow',
-	purple: 'Purple',
-	pink: 'Pink',
-	indigo: 'Indigo',
-	cyan: 'Cyan',
-	orange: 'Orange',
-	lime: 'Lime'
-};
-
 const ALL_COLORS = [
 	'red',
 	'blue',
@@ -76,11 +63,4 @@ export function getColorClass(color: ColorName): string {
  */
 export function getColorHex(color: ColorName): string {
 	return COLOR_HEX[color] || COLOR_HEX['red'];
-}
-
-/**
- * Get the default name for a color
- */
-export function getDefaultColorName(color: ColorName): string {
-	return COLOR_NAMES[color] || color;
 }

@@ -110,5 +110,10 @@ finalResultsTitle: '🏆 Final Results'
 roundWinnerLabel: 'Round {roundNumber}'
 connectionsLabel: '{count} connections'
 playAgainButton: 'Play Again'
+resetGameButton: 'Reset Game'
 gameCompleteMessage: 'All rounds complete!'
 winBonus: 10
+# Results view improvements
+cumulativeLeaderboardLabel: 'Cumulative Scores'
+factionSizeLabel: 'Players Connected'
+nextRoundStartsInLabel: 'Next round starts in'

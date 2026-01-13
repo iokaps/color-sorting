@@ -8,10 +8,10 @@ Color Sorting is a real-time network game where players are randomly assigned on
 
 ### Color Configuration
 
-- Host can customize the number of colors: **1-5 colors** (configurable before game starts)
+- Host can customize the number of colors: **1-10 colors** (configurable before game starts)
 - Host can customize each color's display name (e.g., Red → "Ruby", Blue → "Sapphire")
-- Default is 4 colors: Ruby, Sapphire, Emerald, Gold
-- Available color options: Ruby, Sapphire, Emerald, Gold, Purple
+- Default is 5 colors: Ruby, Sapphire, Emerald, Gold, Purple
+- Available color options: Ruby, Sapphire, Emerald, Gold, Purple, Pink, Indigo, Cyan, Orange, Lime
 - Colors must be assigned before the game starts via the "Edit Color Names" dialog
 
 ### Color Assignment
@@ -177,13 +177,14 @@ Color Sorting is a real-time network game where players are randomly assigned on
 #### Active Round Phase
 
 - See colored blocks for each color with live faction counts
-- Colors shown: Ruby (red), Sapphire (blue), Emerald (green), Gold (yellow), Purple (if enabled)
+- Colors shown dynamically based on numberOfColors configuration (1-10 possible)
+- Default display includes: Ruby (red), Sapphire (blue), Emerald (green), Gold (yellow), Purple (purple), Pink (pink), Indigo (indigo), Cyan (cyan), Orange (orange), Lime (lime)
 - Blocks update reactively in real-time as players scan QR codes and join factions
 - Large, bold numbers for visibility on large screens
 - Display shows countdown timer
-- Example display:
+- Example display (5 colors):
   ```
-  💎 RUBY: 23 | 💙 SAPPHIRE: 18 | 💚 EMERALD: 31 | 💛 GOLD: 28
+  💎 RUBY: 23 | 💙 SAPPHIRE: 18 | 💚 EMERALD: 31 | 💛 GOLD: 28 | 💜 PURPLE: 22
   ```
 
 #### Round Results Phase
@@ -297,7 +298,7 @@ All user-facing text and game parameters are configurable via schema and YAML:
 
 ### Game Parameters
 
-- `numberOfColors`: 1-5 (default 4)
+- `numberOfColors`: 1-10 (default 5)
 - `roundDurationSeconds`: 10-600 (default 90)
 - `totalRounds`: Number of rounds to play (default 3)
 - `winBonus`: Points for winning faction (default 10)

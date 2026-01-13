@@ -6,23 +6,20 @@ import { generateLink } from '@/kit/generate-link';
 import { HostPresenterLayout } from '@/layouts/host-presenter';
 import { kmClient } from '@/services/km-client';
 import { globalActions } from '@/state/actions/global-actions';
+import { roundActions } from '@/state/actions/round-actions';
 import { globalStore } from '@/state/stores/global-store';
 import { ColorNamingView } from '@/views/color-naming-view';
 import { ColorRoundControlView } from '@/views/color-round-control-view';
 import { FinalResultsView } from '@/views/final-results-view';
-import { SharedStateView } from '@/views/shared-state-view';
 import { useSnapshot } from '@kokimoki/app';
-import { CirclePlay, CircleStop, SquareArrowOutUpRight } from 'lucide-react';
+import { CircleStop, RotateCcw, SquareArrowOutUpRight } from 'lucide-react';
 import * as React from 'react';
 
 const App: React.FC = () => {
 	useGlobalController();
 	const { title } = config;
 	const isHost = kmClient.clientContext.mode === 'host';
-	const { started, showPresenterQr, gameComplete } = useSnapshot(
-		globalStore.proxy
-	);
-	const [showColorNaming, setShowColorNaming] = React.useState(false);
+	const { started, gameComplete } = useSnapshot(globalStore.proxy);
 	const [buttonCooldown, setButtonCooldown] = React.useState(true);
 	useDocumentTitle(title);
 
@@ -36,20 +33,25 @@ const App: React.FC = () => {
 		return () => clearTimeout(timeout);
 	}, [started]);
 
-	// Close color naming view when game starts
-	React.useEffect(() => {
-		if (started) {
-			setShowColorNaming(false);
+	// Handle reset game with confirmation
+	const handleResetGame = async () => {
+		const confirmed = confirm(
+			'Are you sure you want to reset the game? All progress will be lost.'
+		);
+		if (confirmed) {
+			setButtonCooldown(true);
+			try {
+				await roundActions.resetGame();
+			} catch (error) {
+				console.error('Failed to reset game:', error);
+				setButtonCooldown(false);
+			}
 		}
-	}, [started]);
+	};
 
 	if (kmClient.clientContext.mode !== 'host') {
 		throw new Error('App host rendered in non-host mode');
 	}
-
-	const playerLink = generateLink(kmClient.clientContext.playerCode, {
-		mode: 'player'
-	});
 
 	const presenterLink = generateLink(kmClient.clientContext.presenterCode, {
 		mode: 'presenter',
@@ -60,22 +62,8 @@ const App: React.FC = () => {
 		<HostPresenterLayout.Root>
 			<HostPresenterLayout.Header />
 			<HostPresenterLayout.Main>
-				{showColorNaming ? (
+				{!started ? (
 					<ColorNamingView />
-				) : !started ? (
-					<div className="space-y-4">
-						<SharedStateView />
-
-						<button
-							type="button"
-							className={
-								showPresenterQr ? 'km-btn-neutral' : 'km-btn-secondary'
-							}
-							onClick={globalActions.togglePresenterQr}
-						>
-							{config.togglePresenterQrButton}
-						</button>
-					</div>
 				) : gameComplete ? (
 					<FinalResultsView />
 				) : (
@@ -85,17 +73,6 @@ const App: React.FC = () => {
 
 			<HostPresenterLayout.Footer>
 				<div className="inline-flex flex-wrap gap-4">
-					{!started && !showColorNaming && isHost && (
-						<button
-							type="button"
-							className="km-btn-primary"
-							onClick={() => setShowColorNaming(true)}
-							disabled={buttonCooldown}
-						>
-							<CirclePlay className="size-5" />
-							{config.editColorNamesButton}
-						</button>
-					)}
 					{started && isHost && (
 						<button
 							type="button"
@@ -107,17 +84,17 @@ const App: React.FC = () => {
 							{config.stopButton}
 						</button>
 					)}
-
-					<a
-						href={playerLink}
-						target="_blank"
-						rel="noreferrer"
-						className="km-btn-secondary"
-					>
-						{config.playerLinkLabel}
-						<SquareArrowOutUpRight className="size-5" />
-					</a>
-
+					{isHost && (gameComplete || !started) && (
+						<button
+							type="button"
+							className="km-btn-neutral"
+							onClick={handleResetGame}
+							disabled={buttonCooldown}
+						>
+							<RotateCcw className="size-5" />
+							{config.resetGameButton}
+						</button>
+					)}
 					<a
 						href={presenterLink}
 						target="_blank"

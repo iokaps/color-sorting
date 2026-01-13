@@ -85,8 +85,14 @@ export const schema = z.object({
 	roundWinnerLabel: z.string().default('Round {roundNumber}'),
 	connectionsLabel: z.string().default('{count} connections'),
 	playAgainButton: z.string().default('Play Again'),
+	resetGameButton: z.string().default('Reset Game'),
 	gameCompleteMessage: z.string().default('All rounds complete!'),
-	winBonus: z.number().default(10)
+	winBonus: z.number().default(10),
+
+	// Results view improvements
+	cumulativeLeaderboardLabel: z.string().default('Cumulative Scores'),
+	factionSizeLabel: z.string().default('Players Connected'),
+	nextRoundStartsInLabel: z.string().default('Next round starts in')
 });
 
 export type Config = z.infer<typeof schema>;

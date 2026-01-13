@@ -117,22 +117,6 @@ export const colorActions = {
 	},
 
 	/**
-	 * Register a player in the color faction (called when player gets assigned a color)
-	 * Note: This just ensures the store is initialized. Actual registration happens on QR scan.
-	 */
-	async registerPlayer(store: KokimokiStore<ColorFactionState>): Promise<void> {
-		await kmClient.transact([store], ([state]) => {
-			// Initialize store objects if not exists (defensive check for sync race)
-			if (!state.players) {
-				state.players = {};
-			}
-			if (!state.edges) {
-				state.edges = {};
-			}
-		});
-	},
-
-	/**
 	 * Calculate the largest connected faction using iterative DFS (no stack overflow)
 	 * This reads from the centralized edges so any client gets the full graph
 	 */
@@ -296,26 +280,5 @@ export const colorActions = {
 		}
 
 		return Math.max(1, componentSize);
-	},
-
-	/**
-	 * Get total player count in this color faction
-	 */
-	getPlayerCount(store: KokimokiStore<ColorFactionState>): number {
-		const state = store.proxy;
-		if (!state?.players) return 0;
-		return Object.keys(state.players).length;
-	},
-
-	/**
-	 * Reset color faction for new round
-	 */
-	async resetColorFaction(
-		store: KokimokiStore<ColorFactionState>
-	): Promise<void> {
-		await kmClient.transact([store], ([state]) => {
-			state.edges = {};
-			state.players = {};
-		});
 	}
 };

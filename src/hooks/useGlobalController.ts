@@ -1,11 +1,7 @@
 import { kmClient } from '@/services/km-client';
 import { colorActions } from '@/state/actions/color-actions';
 import { scoringActions } from '@/state/actions/scoring-actions';
-import {
-	createColorFactionState,
-	getColorStoreName,
-	type ColorFactionState
-} from '@/state/stores/color-store';
+import type { ColorFactionState } from '@/state/stores/color-store';
 import {
 	globalStore,
 	type ColorName,
@@ -16,6 +12,20 @@ import type { KokimokiStore } from '@kokimoki/app';
 import { useSnapshot } from '@kokimoki/app';
 import { useEffect, useRef } from 'react';
 import { useServerTimer } from './useServerTime';
+
+// Global cache for color stores - managed via useDynamicStore in other components
+const colorStoresCache = new Map<ColorName, KokimokiStore<ColorFactionState>>();
+
+/**
+ * Register a color faction store in the global cache
+ * Called by ColorSortingView and ColorPresenterView when they join stores
+ */
+export function registerColorStore(
+	color: ColorName,
+	store: KokimokiStore<ColorFactionState>
+) {
+	colorStoresCache.set(color, store);
+}
 
 /**
  * Hook to control and modify the global state
@@ -35,9 +45,6 @@ export function useGlobalController() {
 	const serverTime = useServerTimer(1000); // tick every second
 	const roundEndedRef = useRef(false);
 	const lastRoundRef = useRef(0);
-	const colorStoresRef = useRef<
-		Partial<Record<ColorName, KokimokiStore<ColorFactionState>>>
-	>({});
 
 	// Get dynamic colors based on numberOfColors
 	const COLORS = generateColorArray(numberOfColors);
@@ -70,35 +77,10 @@ export function useGlobalController() {
 
 		const clearAllStores = async () => {
 			try {
-				// Join all color stores in parallel if not already joined
-				const storePromises = COLORS.map(async (color) => {
-					const storeName = getColorStoreName(color);
-					if (!colorStoresRef.current[color]) {
-						colorStoresRef.current[color] = kmClient.store<ColorFactionState>(
-							storeName,
-							createColorFactionState(),
-							false
-						);
-						try {
-							await kmClient.join(colorStoresRef.current[color]);
-							// Wait a brief moment for state to sync after joining
-							await new Promise((resolve) => setTimeout(resolve, 100));
-						} catch (error) {
-							if (
-								error instanceof Error &&
-								!error.message?.includes('not found')
-							) {
-								console.warn(`Could not join store ${storeName}:`, error);
-							}
-							return null;
-						}
-					}
-					return colorStoresRef.current[color];
-				});
-
-				const stores = await Promise.all(storePromises);
-				// Filter out failed stores (null values)
-				const validStores = stores.filter((store) => store !== null);
+				// Clear all color stores that are currently accessible
+				const validStores = COLORS.map((color) =>
+					colorStoresCache.get(color)
+				).filter((store) => store !== undefined);
 
 				// Clear all valid stores in parallel
 				await Promise.all(
@@ -139,39 +121,9 @@ export function useGlobalController() {
 					};
 
 					try {
-						// Join all color stores in parallel
-						const storePromises = localCOLORS.map(async (color) => {
-							const storeName = getColorStoreName(color);
-							if (!colorStoresRef.current[color]) {
-								colorStoresRef.current[color] =
-									kmClient.store<ColorFactionState>(
-										storeName,
-										createColorFactionState(),
-										false
-									);
-								try {
-									await kmClient.join(colorStoresRef.current[color]);
-									// Wait a brief moment for state to sync after joining
-									await new Promise((resolve) => setTimeout(resolve, 100));
-								} catch (error) {
-									if (
-										error instanceof Error &&
-										!error.message?.includes('not found')
-									) {
-										console.warn(`Could not join store ${storeName}:`, error);
-									}
-									return { color, store: null };
-								}
-							}
-							return { color, store: colorStoresRef.current[color] };
-						});
-
-						const stores = await Promise.all(storePromises);
-						// Filter out failed stores
-						const validStores = stores.filter((s) => s.store !== null);
-
-						// Calculate all faction sizes (synchronous now with iterative DFS)
-						for (const { color, store } of validStores) {
+						// Calculate all faction sizes from currently accessible stores
+						for (const color of localCOLORS) {
+							const store = colorStoresCache.get(color);
 							if (store) {
 								results[color] = colorActions.calculateLargestFaction(store);
 							}
@@ -195,7 +147,7 @@ export function useGlobalController() {
 					const playerScoresThisRound: Record<string, PlayerRoundScore> = {};
 
 					for (const color of localCOLORS) {
-						const colorStore = colorStoresRef.current[color];
+						const colorStore = colorStoresCache.get(color);
 						if (!colorStore) continue;
 
 						// Get connection points for each player in this color
@@ -279,7 +231,8 @@ export function useGlobalController() {
 		serverTime,
 		roundActive,
 		roundStartTimestamp,
-		numberOfColors
+		numberOfColors,
+		COLORS
 	]);
 
 	// Assign colors to late-joining players during active round

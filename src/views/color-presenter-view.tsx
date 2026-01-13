@@ -1,5 +1,7 @@
+import { ConnectionHeatmap } from '@/components/connection-heatmap';
 import { FactionBar } from '@/components/faction-bar';
 import { useDynamicStore } from '@/hooks/useDynamicStore';
+import { registerColorStore } from '@/hooks/useGlobalController';
 import { useServerTimer } from '@/hooks/useServerTime';
 import { colorActions } from '@/state/actions/color-actions';
 import {
@@ -11,6 +13,7 @@ import { globalStore, type ColorName } from '@/state/stores/global-store';
 import { generateColorArray, getColorHex } from '@/utils/color-utils';
 import { useSnapshot, type KokimokiStore } from '@kokimoki/app';
 import { KmTimeCountdown, useKmConfettiContext } from '@kokimoki/shared';
+import { BarChart3, Grid3x3 } from 'lucide-react';
 import * as React from 'react';
 
 interface ColorPresenterInnerProps {
@@ -40,6 +43,7 @@ const ColorPresenterInner: React.FC<ColorPresenterInnerProps> = ({
 	const serverTime = useServerTimer(250);
 	const confetti = useKmConfettiContext();
 	const [confettiTriggered, setConfettiTriggered] = React.useState(false);
+	const [showHeatmap, setShowHeatmap] = React.useState(false);
 
 	const elapsedMs = Math.max(0, serverTime - roundStartTimestamp);
 	const roundDurationMs = (roundDurationSeconds || 90) * 1000;
@@ -87,6 +91,31 @@ const ColorPresenterInner: React.FC<ColorPresenterInnerProps> = ({
 		createColorFactionState()
 	);
 
+	// Register all stores with the global controller
+	React.useEffect(() => {
+		registerColorStore('red', redStore.store);
+		registerColorStore('blue', blueStore.store);
+		registerColorStore('green', greenStore.store);
+		registerColorStore('yellow', yellowStore.store);
+		registerColorStore('purple', purpleStore.store);
+		registerColorStore('pink', pinkStore.store);
+		registerColorStore('indigo', indigoStore.store);
+		registerColorStore('cyan', cyanStore.store);
+		registerColorStore('orange', orangeStore.store);
+		registerColorStore('lime', limeStore.store);
+	}, [
+		redStore.store,
+		blueStore.store,
+		greenStore.store,
+		yellowStore.store,
+		purpleStore.store,
+		pinkStore.store,
+		indigoStore.store,
+		cyanStore.store,
+		orangeStore.store,
+		limeStore.store
+	]);
+
 	// Get snapshots for all colors (unconditional hook calls - required by React Rules of Hooks)
 	// These capture reactive updates from the stores
 	const redSnapshot = useSnapshot(redStore.store.proxy);
@@ -127,6 +156,36 @@ const ColorPresenterInner: React.FC<ColorPresenterInnerProps> = ({
 			cyanStore.store,
 			orangeStore.store,
 			limeStore.store
+		]
+	);
+
+	// Build a map of all snapshots for easy access
+	const dynamicSnapshotsAll = React.useMemo<
+		Record<ColorName, ColorFactionState>
+	>(
+		() => ({
+			red: redSnapshot,
+			blue: blueSnapshot,
+			green: greenSnapshot,
+			yellow: yellowSnapshot,
+			purple: purpleSnapshot,
+			pink: pinkSnapshot,
+			indigo: indigoSnapshot,
+			cyan: cyanSnapshot,
+			orange: orangeSnapshot,
+			lime: limeSnapshot
+		}),
+		[
+			redSnapshot,
+			blueSnapshot,
+			greenSnapshot,
+			yellowSnapshot,
+			purpleSnapshot,
+			pinkSnapshot,
+			indigoSnapshot,
+			cyanSnapshot,
+			orangeSnapshot,
+			limeSnapshot
 		]
 	);
 
@@ -201,17 +260,55 @@ const ColorPresenterInner: React.FC<ColorPresenterInnerProps> = ({
 				</div>
 			)}
 
+			{/* Toggle between Faction Bars and Heat Map views */}
+			{roundActive && (
+				<div className="flex justify-center">
+					<button
+						onClick={() => setShowHeatmap(!showHeatmap)}
+						className="inline-flex items-center gap-2 rounded-lg bg-slate-600/50 px-4 py-2 font-medium text-white transition-colors hover:bg-slate-500/50"
+					>
+						{showHeatmap ? (
+							<>
+								<BarChart3 className="size-5" />
+								View as Bars
+							</>
+						) : (
+							<>
+								<Grid3x3 className="size-5" />
+								View as Heat Map
+							</>
+						)}
+					</button>
+				</div>
+			)}
+
 			{/* Faction bars display - shows cluster distribution */}
-			<div className="w-full max-w-6xl space-y-3">
-				{colors.map((color) => (
-					<FactionBar
-						key={color}
-						color={getColorHex(color)}
-						colorName={colorNames[color]}
-						clusterSizes={factionClusters[color] || []}
-					/>
-				))}
-			</div>
+			{!showHeatmap && (
+				<div className="w-full max-w-6xl space-y-3">
+					{colors.map((color) => (
+						<FactionBar
+							key={color}
+							color={getColorHex(color)}
+							colorName={colorNames[color]}
+							clusterSizes={factionClusters[color] || []}
+						/>
+					))}
+				</div>
+			)}
+
+			{/* Heat map display - shows player-to-player connections */}
+			{showHeatmap && (
+				<div className="grid w-full max-w-6xl grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
+					{colors.map((color) => (
+						<ConnectionHeatmap
+							key={color}
+							color={color}
+							colorName={colorNames[color]}
+							factionState={dynamicSnapshotsAll[color]}
+						/>
+					))}
+				</div>
+			)}
 
 			{/* Summary - total players across all colors */}
 			<div className="rounded-2xl border border-slate-600/50 bg-slate-700/50 px-6 py-4 text-center backdrop-blur-sm lg:px-8 lg:py-6">
