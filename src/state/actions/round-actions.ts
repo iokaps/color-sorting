@@ -1,3 +1,4 @@
+import { getColorStoresCache } from '@/hooks/useGlobalController';
 import { kmClient } from '@/services/km-client';
 import { generateColorArray } from '@/utils/color-utils';
 import type { KokimokiStore } from '@kokimoki/app';
@@ -120,17 +121,45 @@ export const roundActions = {
 	},
 
 	async resetGame() {
+		// Clear all color faction stores from the previous game
+		try {
+			const colorStoresCache = getColorStoresCache();
+			const COLORS = generateColorArray(10); // All possible colors
+
+			// Clear each color store
+			await Promise.all(
+				COLORS.map((color) => {
+					const store = colorStoresCache.get(color);
+					if (store) {
+						return colorActions.clearFaction(store);
+					}
+					return Promise.resolve();
+				})
+			);
+		} catch (error) {
+			console.error('Error clearing color stores during reset:', error);
+			// Continue with game reset even if store clearing fails
+		}
+
+		// Reset global state
 		await kmClient.transact([globalStore], ([globalState]) => {
 			globalState.roundNumber = 0;
 			globalState.roundHistory = {};
+			globalState.playerScores = {};
 			const resetResults: Record<ColorName, number> = {};
-			const COLORS = generateColorArray(globalState.numberOfColors);
-			for (const color of COLORS) {
+			const COLORS_LOCAL = generateColorArray(globalState.numberOfColors);
+			for (const color of COLORS_LOCAL) {
 				resetResults[color] = 0;
 			}
 			globalState.roundResults = resetResults;
 			globalState.playerColors = {};
 			globalState.gameComplete = false;
+			globalState.started = false;
 		});
+
+		// Clear the color stores cache to force fresh joins on next game
+		// This helps clean up any lingering listeners/connections
+		const cache = getColorStoresCache();
+		cache.clear();
 	}
 };

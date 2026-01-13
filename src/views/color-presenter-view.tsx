@@ -1,19 +1,16 @@
-import { ConnectionHeatmap } from '@/components/connection-heatmap';
-import { FactionBar } from '@/components/faction-bar';
+import { AnimatedPulseRings } from '@/components/animated-pulse-rings';
 import { useDynamicStore } from '@/hooks/useDynamicStore';
 import { registerColorStore } from '@/hooks/useGlobalController';
 import { useServerTimer } from '@/hooks/useServerTime';
-import { colorActions } from '@/state/actions/color-actions';
 import {
 	createColorFactionState,
 	getColorStoreName,
 	type ColorFactionState
 } from '@/state/stores/color-store';
 import { globalStore, type ColorName } from '@/state/stores/global-store';
-import { generateColorArray, getColorHex } from '@/utils/color-utils';
-import { useSnapshot, type KokimokiStore } from '@kokimoki/app';
+import { generateColorArray } from '@/utils/color-utils';
+import { useSnapshot } from '@kokimoki/app';
 import { KmTimeCountdown, useKmConfettiContext } from '@kokimoki/shared';
-import { BarChart3, Grid3x3 } from 'lucide-react';
 import * as React from 'react';
 
 interface ColorPresenterInnerProps {
@@ -43,13 +40,12 @@ const ColorPresenterInner: React.FC<ColorPresenterInnerProps> = ({
 	const serverTime = useServerTimer(250);
 	const confetti = useKmConfettiContext();
 	const [confettiTriggered, setConfettiTriggered] = React.useState(false);
-	const [showHeatmap, setShowHeatmap] = React.useState(false);
 
 	const elapsedMs = Math.max(0, serverTime - roundStartTimestamp);
 	const roundDurationMs = (roundDurationSeconds || 90) * 1000;
 	const remainingMs = Math.max(0, roundDurationMs - elapsedMs);
 
-	// Initialize stores for all 10 colors (unconditional hook calls)
+	// Initialize stores for all 10 colors (unconditional hook calls required by React)
 	const redStore = useDynamicStore(
 		getColorStoreName('red'),
 		createColorFactionState()
@@ -129,36 +125,6 @@ const ColorPresenterInner: React.FC<ColorPresenterInnerProps> = ({
 	const orangeSnapshot = useSnapshot(orangeStore.store.proxy);
 	const limeSnapshot = useSnapshot(limeStore.store.proxy);
 
-	// Build a map of all stores for easy access
-	const dynamicStoresAll = React.useMemo<
-		Record<ColorName, KokimokiStore<ColorFactionState>>
-	>(
-		() => ({
-			red: redStore.store,
-			blue: blueStore.store,
-			green: greenStore.store,
-			yellow: yellowStore.store,
-			purple: purpleStore.store,
-			pink: pinkStore.store,
-			indigo: indigoStore.store,
-			cyan: cyanStore.store,
-			orange: orangeStore.store,
-			lime: limeStore.store
-		}),
-		[
-			redStore.store,
-			blueStore.store,
-			greenStore.store,
-			yellowStore.store,
-			purpleStore.store,
-			pinkStore.store,
-			indigoStore.store,
-			cyanStore.store,
-			orangeStore.store,
-			limeStore.store
-		]
-	);
-
 	// Build a map of all snapshots for easy access
 	const dynamicSnapshotsAll = React.useMemo<
 		Record<ColorName, ColorFactionState>
@@ -188,36 +154,6 @@ const ColorPresenterInner: React.FC<ColorPresenterInnerProps> = ({
 			limeSnapshot
 		]
 	);
-
-	// Calculate all faction clusters for active colors (for visualization)
-	const factionClusters = React.useMemo(() => {
-		const clusters: Record<ColorName, number[]> = {};
-
-		for (const color of colors) {
-			const store = dynamicStoresAll[color];
-			if (store) {
-				clusters[color] = colorActions.getAllFactionClusters(store);
-			} else {
-				clusters[color] = [];
-			}
-		}
-
-		return clusters;
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [
-		colors,
-		dynamicStoresAll,
-		redSnapshot,
-		blueSnapshot,
-		greenSnapshot,
-		yellowSnapshot,
-		purpleSnapshot,
-		pinkSnapshot,
-		indigoSnapshot,
-		cyanSnapshot,
-		orangeSnapshot,
-		limeSnapshot
-	]);
 
 	// Trigger confetti when round ends
 	React.useEffect(() => {
@@ -260,62 +196,26 @@ const ColorPresenterInner: React.FC<ColorPresenterInnerProps> = ({
 				</div>
 			)}
 
-			{/* Toggle between Faction Bars and Heat Map views */}
-			{roundActive && (
-				<div className="flex justify-center">
-					<button
-						onClick={() => setShowHeatmap(!showHeatmap)}
-						className="inline-flex items-center gap-2 rounded-lg bg-slate-600/50 px-4 py-2 font-medium text-white transition-colors hover:bg-slate-500/50"
-					>
-						{showHeatmap ? (
-							<>
-								<BarChart3 className="size-5" />
-								View as Bars
-							</>
-						) : (
-							<>
-								<Grid3x3 className="size-5" />
-								View as Heat Map
-							</>
-						)}
-					</button>
-				</div>
-			)}
-
-			{/* Faction bars display - shows cluster distribution */}
-			{!showHeatmap && (
-				<div className="w-full max-w-6xl space-y-3">
-					{colors.map((color) => (
-						<FactionBar
-							key={color}
-							color={getColorHex(color)}
-							colorName={colorNames[color]}
-							clusterSizes={factionClusters[color] || []}
-						/>
-					))}
-				</div>
-			)}
-
-			{/* Heat map display - shows player-to-player connections */}
-			{showHeatmap && (
-				<div className="grid w-full max-w-6xl grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
-					{colors.map((color) => (
-						<ConnectionHeatmap
-							key={color}
-							color={color}
-							colorName={colorNames[color]}
-							factionState={dynamicSnapshotsAll[color]}
-						/>
-					))}
-				</div>
-			)}
+			{/* Animated pulse rings display - shows faction size growth */}
+			<div className="grid w-full max-w-6xl grid-cols-2 gap-6 lg:grid-cols-3 xl:grid-cols-5">
+				{colors.map((color) => (
+					<AnimatedPulseRings
+						key={color}
+						color={color}
+						colorName={colorNames[color]}
+						factionState={dynamicSnapshotsAll[color]}
+					/>
+				))}
+			</div>
 
 			{/* Summary - total players across all colors */}
 			<div className="rounded-2xl border border-slate-600/50 bg-slate-700/50 px-6 py-4 text-center backdrop-blur-sm lg:px-8 lg:py-6">
 				<p className="text-3xl font-bold text-white lg:text-4xl">
 					{colors.reduce((sum, color) => {
-						const clusters = factionClusters[color] || [];
-						return sum + clusters.reduce((a, b) => a + b, 0);
+						const players = Object.keys(
+							dynamicSnapshotsAll[color]?.players || {}
+						);
+						return sum + players.length;
 					}, 0)}
 				</p>
 				<p className="text-base text-slate-300 lg:text-lg">Total connected</p>
@@ -344,7 +244,7 @@ export const ColorPresenterView: React.FC = () => {
 
 	return (
 		<ColorPresenterInner
-			key={numberOfColors}
+			key={`${numberOfColors}-${roundNumber}`}
 			colors={COLORS}
 			colorNames={colorNames}
 			logoUrl={logoUrl}

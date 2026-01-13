@@ -28,6 +28,16 @@ export function registerColorStore(
 }
 
 /**
+ * Get the color stores cache for clearing during game reset
+ */
+export function getColorStoresCache(): Map<
+	ColorName,
+	KokimokiStore<ColorFactionState>
+> {
+	return colorStoresCache;
+}
+
+/**
  * Hook to control and modify the global state
  * @returns A boolean indicating if the current client is the global controller
  */
@@ -44,7 +54,6 @@ export function useGlobalController() {
 	const isGlobalController = controllerConnectionId === kmClient.connectionId;
 	const serverTime = useServerTimer(1000); // tick every second
 	const roundEndedRef = useRef(false);
-	const lastRoundRef = useRef(0);
 
 	// Get dynamic colors based on numberOfColors
 	const COLORS = generateColorArray(numberOfColors);
@@ -67,32 +76,8 @@ export function useGlobalController() {
 			.catch(() => {});
 	}, [connectionIds, controllerConnectionId, numberOfColors]);
 
-	// Clear color stores when a new round starts (global controller responsibility)
-	useEffect(() => {
-		if (!isGlobalController) return;
-		if (roundNumber <= lastRoundRef.current) return;
-
-		// New round started - clear all color stores
-		lastRoundRef.current = roundNumber;
-
-		const clearAllStores = async () => {
-			try {
-				// Clear all color stores that are currently accessible
-				const validStores = COLORS.map((color) =>
-					colorStoresCache.get(color)
-				).filter((store) => store !== undefined);
-
-				// Clear all valid stores in parallel
-				await Promise.all(
-					validStores.map((store) => colorActions.clearFaction(store))
-				);
-			} catch (error) {
-				console.error('Error clearing color stores:', error);
-			}
-		};
-
-		clearAllStores();
-	}, [isGlobalController, roundNumber, numberOfColors, COLORS]);
+	// Note: Color stores are automatically cleared when ColorPresenterInner remounts
+	// due to the roundNumber changing in its key prop. This triggers useDynamicStore cleanup.
 
 	// Run global controller-specific logic
 	useEffect(() => {

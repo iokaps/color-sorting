@@ -222,5 +222,5 @@ export const ColorSortingView: React.FC = () => {
 		);
 	}
 
-	return <ColorSortingViewInner playerColor={playerColor} />;
+	return <ColorSortingViewInner key={playerColor} playerColor={playerColor} />;
 };
