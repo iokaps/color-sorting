@@ -13,7 +13,7 @@ export const FinalResultsView: React.FC = () => {
 	const { roundHistory, playerScores, colorNames } = useSnapshot(
 		globalStore.proxy
 	);
-	const isHost = kmClient.clientContext.mode === 'host';
+	const isPresenter = kmClient.clientContext.mode === 'presenter';
 	const confetti = useKmConfettiContext();
 	const [buttonCooldown, setButtonCooldown] = React.useState(false);
 	const [expandedPlayer, setExpandedPlayer] = React.useState<string | null>(
@@ -78,10 +78,20 @@ export const FinalResultsView: React.FC = () => {
 			{/* Title */}
 			<div className="text-center">
 				<Trophy className="mx-auto mb-1 size-8 text-yellow-500 sm:size-12" />
-				<h1 className="text-xl font-bold text-slate-900 sm:text-3xl">
+				<h1
+					className={cn(
+						'text-xl font-bold sm:text-3xl',
+						isPresenter ? 'text-white' : 'text-slate-900'
+					)}
+				>
 					{config.finalResultsTitle}
 				</h1>
-				<p className="mt-1 text-xs text-slate-600 sm:text-sm">
+				<p
+					className={cn(
+						'mt-1 text-xs sm:text-sm',
+						isPresenter ? 'text-slate-300' : 'text-slate-600'
+					)}
+				>
 					{config.gameCompleteMessage}
 				</p>
 			</div>
@@ -109,7 +119,12 @@ export const FinalResultsView: React.FC = () => {
 
 			{/* Leaderboard */}
 			<div className="w-full max-w-2xl space-y-2 sm:space-y-3">
-				<h2 className="text-center text-sm font-semibold text-slate-700 sm:text-base">
+				<h2
+					className={cn(
+						'text-center text-sm font-semibold sm:text-base',
+						isPresenter ? 'text-slate-300' : 'text-slate-700'
+					)}
+				>
 					Leaderboard
 				</h2>
 
@@ -164,7 +179,12 @@ export const FinalResultsView: React.FC = () => {
 							{expandedPlayer === player.clientId && (
 								<div className="border-t border-slate-200 bg-slate-50 px-3 py-2 sm:px-4 sm:py-3">
 									<div className="space-y-1.5 sm:space-y-2">
-										<h4 className="text-xs font-semibold text-slate-700 sm:text-sm">
+										<h4
+											className={cn(
+												'text-xs font-semibold sm:text-sm',
+												isPresenter ? 'text-slate-300' : 'text-slate-700'
+											)}
+										>
 											Round Breakdown:
 										</h4>
 										{sortedRounds.map((round) => {
@@ -185,14 +205,19 @@ export const FinalResultsView: React.FC = () => {
 														getTextColorForBg(roundScore.color as ColorName)
 													)}
 												>
-													<div>
+													<div className={isPresenter ? 'text-white' : ''}>
 														<p className="font-medium">
 															Round {round.roundNumber}:{' '}
 															<span className="font-bold">
 																{colorNames[roundScore.color]}
 															</span>
 														</p>
-														<p className="opacity-80">
+														<p
+															className={cn(
+																'opacity-80',
+																isPresenter ? 'text-white' : ''
+															)}
+														>
 															{roundScore.connectionPoints} connection
 															{roundScore.connectionPoints !== 1
 																? 's'
@@ -219,7 +244,12 @@ export const FinalResultsView: React.FC = () => {
 			{/* Round summary */}
 			{sortedRounds.length > 0 && (
 				<div className="w-full max-w-md space-y-2 sm:space-y-3">
-					<h3 className="text-center text-sm font-semibold text-slate-700 sm:text-base">
+					<h3
+						className={cn(
+							'text-center text-sm font-semibold sm:text-base',
+							isPresenter ? 'text-slate-300' : 'text-slate-700'
+						)}
+					>
 						Round Results
 					</h3>
 					<div className="space-y-1.5 sm:space-y-2">
@@ -230,18 +260,33 @@ export const FinalResultsView: React.FC = () => {
 							>
 								<div className="flex items-center justify-between gap-2">
 									<div>
-										<p className="text-[10px] font-medium text-slate-600 sm:text-xs">
+										<p
+											className={cn(
+												'text-[10px] font-medium sm:text-xs',
+												isPresenter ? 'text-slate-400' : 'text-slate-600'
+											)}
+										>
 											{config.roundWinnerLabel.replace(
 												'{roundNumber}',
 												result.roundNumber.toString()
 											)}
 										</p>
 										{result.winningColors.length > 1 ? (
-											<p className="text-xs font-bold text-slate-900 sm:text-sm">
+											<p
+												className={cn(
+													'text-xs font-bold sm:text-sm',
+													isPresenter ? 'text-white' : 'text-slate-900'
+												)}
+											>
 												Tie: {result.winningColorNames.join(', ')}
 											</p>
 										) : (
-											<p className="text-xs font-bold text-slate-900 sm:text-sm">
+											<p
+												className={cn(
+													'text-xs font-bold sm:text-sm',
+													isPresenter ? 'text-white' : 'text-slate-900'
+												)}
+											>
 												Winner:{' '}
 												<span
 													className={`${getColorClass(result.winningColors[0])}`}
@@ -252,12 +297,22 @@ export const FinalResultsView: React.FC = () => {
 										)}
 									</div>
 									<div className="text-right">
-										<p className="text-base font-bold text-slate-900 sm:text-lg">
+										<p
+											className={cn(
+												'text-base font-bold sm:text-lg',
+												isPresenter ? 'text-white' : 'text-slate-900'
+											)}
+										>
 											{Number.isNaN(result.largestFactionSize)
 												? '—'
 												: result.largestFactionSize}
 										</p>
-										<p className="text-[10px] text-slate-600 sm:text-xs">
+										<p
+											className={cn(
+												'text-[10px] sm:text-xs',
+												isPresenter ? 'text-slate-400' : 'text-slate-600'
+											)}
+										>
 											largest group
 										</p>
 									</div>
@@ -269,7 +324,7 @@ export const FinalResultsView: React.FC = () => {
 			)}
 
 			{/* Play again button (host only) */}
-			{isHost && (
+			{!isPresenter && (
 				<button
 					type="button"
 					className="km-btn-primary h-10 text-sm sm:h-11"

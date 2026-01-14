@@ -77,12 +77,14 @@ export function useGlobalController() {
 	}, [connectionIds, controllerConnectionId, numberOfColors]);
 
 	// Clear color stores when a new round starts
-	// This clears the connection data so each round starts fresh
+	// IMPORTANT: Clear AFTER results are calculated (not immediately)
+	// This ensures calculation has access to all connection data
 	useEffect(() => {
 		if (!isGlobalController || roundStartTimestamp === 0) return;
 		if (roundStartTimestamp <= lastRoundStartRef.current) return;
 
-		// New round started - clear stores
+		// New round started - clear stores AFTER a longer delay
+		// to ensure previous round's results calculation is complete
 		lastRoundStartRef.current = roundStartTimestamp;
 
 		const timeout = setTimeout(async () => {
@@ -111,7 +113,7 @@ export function useGlobalController() {
 			} catch {
 				// Silently ignore errors
 			}
-		}, 50); // Wait for stores to be joined
+		}, 500); // Wait 500ms to allow previous round results calculation to complete
 
 		return () => clearTimeout(timeout);
 	}, [isGlobalController, roundStartTimestamp, numberOfColors]);
@@ -134,6 +136,10 @@ export function useGlobalController() {
 
 				// Calculate largest faction for each color - PARALLELIZED
 				const calculateRoundResults = async () => {
+					// Wait for all stores to sync their data before calculating results
+					// This ensures all player connections and edges are propagated
+					await new Promise((resolve) => setTimeout(resolve, 250));
+
 					const localCOLORS = generateColorArray(numberOfColors);
 					// Initialize results with all colors (not just the hardcoded 4)
 					const results: Record<ColorName, number> = {};
@@ -146,7 +152,8 @@ export function useGlobalController() {
 						for (const color of localCOLORS) {
 							const store = colorStoresCache.get(color);
 							if (store) {
-								results[color] = colorActions.calculateLargestFaction(store);
+								const factionSize = colorActions.calculateLargestFaction(store);
+								results[color] = factionSize;
 							}
 						}
 					} catch (error) {
