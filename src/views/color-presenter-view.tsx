@@ -1,4 +1,5 @@
 import { AnimatedPulseRings } from '@/components/animated-pulse-rings';
+import { config } from '@/config';
 import { useDynamicStore } from '@/hooks/useDynamicStore';
 import { registerColorStore } from '@/hooks/useGlobalController';
 import { useServerTimer } from '@/hooks/useServerTime';
@@ -190,7 +191,7 @@ const ColorPresenterInner: React.FC<ColorPresenterInnerProps> = ({
 					</p>
 					{remainingMs < 10000 && (
 						<p className="mt-2 animate-pulse text-lg font-semibold text-red-400">
-							Almost time!
+							{config.almostTimeMd}
 						</p>
 					)}
 				</div>
@@ -218,7 +219,9 @@ const ColorPresenterInner: React.FC<ColorPresenterInnerProps> = ({
 						return sum + players.length;
 					}, 0)}
 				</p>
-				<p className="text-base text-slate-300 lg:text-lg">Total connected</p>
+				<p className="text-base text-slate-300 lg:text-lg">
+					{config.totalConnectedLabel}
+				</p>
 			</div>
 		</div>
 	);

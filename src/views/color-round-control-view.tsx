@@ -76,7 +76,7 @@ export const ColorRoundControlView: React.FC = () => {
 					{totalOnline} {config.players}
 					{roundActive && playersWithColors < totalOnline && (
 						<span className="ml-2 text-sm font-normal text-amber-600">
-							({totalOnline - playersWithColors} waiting for color)
+							({totalOnline - playersWithColors} {config.waitingForColorMd})
 						</span>
 					)}
 				</span>
@@ -94,7 +94,7 @@ export const ColorRoundControlView: React.FC = () => {
 				)}
 				{roundActive && remainingMs < 10000 && (
 					<p className="mt-2 animate-pulse text-lg font-semibold text-red-600">
-						Almost time!
+						{config.almostTimeMd}
 					</p>
 				)}
 			</div>
@@ -130,12 +130,17 @@ export const ColorRoundControlView: React.FC = () => {
 			<p className="text-center text-lg font-medium text-slate-700">
 				{!roundActive ? (
 					roundNumber === 0 ? (
-						<>Click to assign colors and start round 1</>
+						<>{config.clickToAssignColorsAndStartMd}</>
 					) : (
-						<>Click to start next round</>
+						<>{config.clickToStartNextRoundMd}</>
 					)
 				) : (
-					<>Round {roundNumber} is active. Players are connecting...</>
+					<>
+						{config.roundActivePlayersConnectingMd.replace(
+							'{roundNumber}',
+							roundNumber.toString()
+						)}
+					</>
 				)}
 			</p>
 		</div>

@@ -152,7 +152,7 @@ export const ColorNamingView: React.FC = () => {
 			{/* Number of Colors Section */}
 			<div className="rounded-xl border border-slate-300 bg-white p-6">
 				<label htmlFor="number-of-colors" className="block text-sm font-medium">
-					Number of Colors
+					{config.numberOfColorsLabel}
 				</label>
 				<div className="mt-2 flex items-center gap-3">
 					<button
@@ -219,7 +219,7 @@ export const ColorNamingView: React.FC = () => {
 					id="round-duration"
 					type="number"
 					min="10"
-					max="600"
+					max="180"
 					value={editedDuration}
 					onChange={handleDurationChange}
 					className="km-input mt-2"

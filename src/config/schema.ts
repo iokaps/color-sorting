@@ -16,7 +16,6 @@ export const schema = z.object({
 	players: z.string().default('Players'),
 	online: z.string().default('Online'),
 	offline: z.string().default('Offline'),
-	startButton: z.string().default('Start Game'),
 	stopButton: z.string().default('Stop Game'),
 	loading: z.string().default('Loading...'),
 
@@ -29,12 +28,8 @@ export const schema = z.object({
 	playerNameLabel: z.string().default('Name:'),
 	playerNameButton: z.string().default('Continue'),
 
-	playerLinkLabel: z.string().default('Player Link'),
 	presenterLinkLabel: z.string().default('Presenter Link'),
 
-	togglePresenterQrButton: z.string().default('Toggle Presenter QR'),
-
-	menuAriaLabel: z.string().default('Open menu drawer'),
 	menuHelpAriaLabel: z.string().default('Open help drawer'),
 
 	// Color Sorting Game Config
@@ -53,14 +48,8 @@ export const schema = z.object({
 	nextRoundButton: z.string().default('Next Round'),
 	roundNumber: z.string().default('Round'),
 	connectedWithCountMd: z.string().default('Connected with {count} others'),
-	alreadyConnectedMd: z.string().default('Already connected to this player'),
 	scanQrCodeButton: z.string().default('Scan QR Code'),
-	colorRed: z.string().default('Ruby'),
-	colorBlue: z.string().default('Sapphire'),
-	colorGreen: z.string().default('Emerald'),
-	colorYellow: z.string().default('Gold'),
-	colorPurple: z.string().default('Purple'),
-	roundDurationSeconds: z.number().default(90),
+	roundDurationSeconds: z.number().min(10).max(180).default(90),
 	numberOfColors: z.number().min(1).max(10).default(5),
 	winnerAnnouncement: z
 		.string()
@@ -74,16 +63,23 @@ export const schema = z.object({
 			'# Name the Colors\n\nCustomize the color names for this game round. For example: Red → Marketing, Blue → Engineering.'
 		),
 	colorNameLabel: z.string().default('Color name'),
+	numberOfColorsLabel: z.string().default('Number of Colors'),
 	roundDurationLabel: z.string().default('Round duration (seconds)'),
 	totalRoundsLabel: z.string().default('Total rounds'),
 	logoUploadLabel: z.string().default('Upload logo (optional)'),
 	saveColorNamesButton: z.string().default('Save Names & Start Game'),
-	editColorNamesButton: z.string().default('Edit Color Names'),
+	waitingForColorMd: z.string().default('waiting for color'),
+	clickToAssignColorsAndStartMd: z
+		.string()
+		.default('Click to assign colors and start round 1'),
+	clickToStartNextRoundMd: z.string().default('Click to start next round'),
+	roundActivePlayersConnectingMd: z
+		.string()
+		.default('Round {roundNumber} is active. Players are connecting...'),
 
 	// Final results
 	finalResultsTitle: z.string().default('🏆 Final Results'),
 	roundWinnerLabel: z.string().default('Round {roundNumber}'),
-	connectionsLabel: z.string().default('{count} connections'),
 	playAgainButton: z.string().default('Play Again'),
 	resetGameButton: z.string().default('Reset Game'),
 	gameCompleteMessage: z.string().default('All rounds complete!'),
@@ -92,7 +88,8 @@ export const schema = z.object({
 	// Results view improvements
 	cumulativeLeaderboardLabel: z.string().default('Cumulative Scores'),
 	factionSizeLabel: z.string().default('Players Connected'),
-	nextRoundStartsInLabel: z.string().default('Next round starts in')
+	almostTimeMd: z.string().default('Almost time!'),
+	totalConnectedLabel: z.string().default('Total connected')
 });
 
 export type Config = z.infer<typeof schema>;
