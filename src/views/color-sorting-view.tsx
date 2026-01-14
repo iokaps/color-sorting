@@ -39,6 +39,64 @@ const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
 		}
 	}, [playerColor, colorStore, isConnected]);
 
+	// Add this player to the faction when store connects
+	React.useEffect(() => {
+		if (!isConnected) return;
+
+		const addPlayerToFaction = async () => {
+			const maxRetries = 5;
+			let lastError: Error | null = null;
+
+			for (let attempt = 1; attempt <= maxRetries; attempt++) {
+				try {
+					await kmClient.transact([colorStore], ([state]) => {
+						// Ensure state objects exist
+						if (!state.players) state.players = {};
+						if (!state.edges) state.edges = {};
+
+						// Add this player to the faction if not already there
+						const now = kmClient.serverTimestamp();
+						if (!state.players[kmClient.id]) {
+							state.players[kmClient.id] = { joinedAt: now };
+						}
+					});
+					// Success - exit the retry loop
+					return;
+				} catch (error) {
+					lastError = error as Error;
+
+					// If it's a "Room not joined" error and we have retries left, wait and retry
+					if (
+						lastError?.message?.includes('Room not joined') &&
+						attempt < maxRetries
+					) {
+						const waitMs = 200 * attempt;
+						// Wait 200ms * attempt before retrying
+						await new Promise((resolve) => setTimeout(resolve, waitMs));
+						continue;
+					}
+
+					// For other errors or final attempt, just log and move on
+					console.error(
+						`Failed to add player to faction (attempt ${attempt}/${maxRetries}):`,
+						error
+					);
+					return;
+				}
+			}
+
+			// If we got here, all retries failed
+			if (lastError) {
+				console.error(
+					'Failed to add player to faction after all retries:',
+					lastError
+				);
+			}
+		};
+
+		addPlayerToFaction();
+	}, [isConnected, colorStore]);
+
 	// Get faction data for reactivity - when edges or players change, playerCount updates
 	useSnapshot(colorStore.proxy);
 

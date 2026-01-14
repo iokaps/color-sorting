@@ -253,7 +253,9 @@ export const FinalResultsView: React.FC = () => {
 									</div>
 									<div className="text-right">
 										<p className="text-base font-bold text-slate-900 sm:text-lg">
-											{result.largestFactionSize}
+											{Number.isNaN(result.largestFactionSize)
+												? '—'
+												: result.largestFactionSize}
 										</p>
 										<p className="text-[10px] text-slate-600 sm:text-xs">
 											largest group

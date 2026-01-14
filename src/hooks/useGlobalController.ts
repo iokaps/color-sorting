@@ -127,12 +127,11 @@ export function useGlobalController() {
 				// Calculate largest faction for each color - PARALLELIZED
 				const calculateRoundResults = async () => {
 					const localCOLORS = generateColorArray(numberOfColors);
-					const results: Record<ColorName, number> = {
-						red: 0,
-						blue: 0,
-						green: 0,
-						yellow: 0
-					};
+					// Initialize results with all colors (not just the hardcoded 4)
+					const results: Record<ColorName, number> = {};
+					localCOLORS.forEach((color) => {
+						results[color] = 0;
+					});
 
 					try {
 						// Calculate all faction sizes from currently accessible stores

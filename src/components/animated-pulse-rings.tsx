@@ -19,7 +19,10 @@ export const AnimatedPulseRings: React.FC<AnimatedPulseRingsProps> = ({
 	factionState
 }) => {
 	const colorHex = getColorHex(color);
-	const playerCount = Object.keys(factionState?.players || {}).length;
+	const playerCount = Math.max(
+		0,
+		Object.keys(factionState?.players || {}).length || 0
+	);
 
 	// Scale ring size based on player count (20-200px)
 	const maxRingSize = Math.max(80, Math.min(200, playerCount * 15));

@@ -65,13 +65,16 @@ export const colorActions = {
 		for (let attempt = 1; attempt <= maxRetries; attempt++) {
 			try {
 				await kmClient.transact([store], ([state]) => {
+					// Defensive: ensure state exists
+					if (!state) return;
+
 					const now = kmClient.serverTimestamp();
 
 					// Initialize objects if not exists (defensive check for sync race)
-					if (!state.players) {
+					if (!state.players || typeof state.players !== 'object') {
 						state.players = {};
 					}
-					if (!state.edges) {
+					if (!state.edges || typeof state.edges !== 'object') {
 						state.edges = {};
 					}
 
