@@ -29,11 +29,11 @@ export const ColorAssignmentView: React.FC = () => {
 			<div
 				className={`flex h-40 w-40 items-center justify-center rounded-3xl shadow-2xl sm:h-64 sm:w-64 ${getColorClass(playerColor)}`}
 			>
-				<div className="text-center">
+				<div className="px-4 text-center">
 					<p className="text-lg font-light text-white/80 sm:text-2xl">
 						You are
 					</p>
-					<p className="text-4xl font-bold text-white sm:text-6xl">
+					<p className="line-clamp-3 text-3xl font-bold break-words text-white sm:text-5xl">
 						{colorNames[playerColor]}
 					</p>
 				</div>

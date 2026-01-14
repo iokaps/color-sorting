@@ -130,9 +130,9 @@ const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
 			{/* Color reference + Group size in row */}
 			<div className="flex items-center gap-3">
 				<div
-					className={`flex h-12 w-12 items-center justify-center rounded-lg shadow-md sm:h-14 sm:w-14 sm:rounded-xl ${getColorClass(playerColor)}`}
+					className={`flex h-16 w-24 items-center justify-center rounded-lg shadow-md sm:h-20 sm:w-32 sm:rounded-xl ${getColorClass(playerColor)}`}
 				>
-					<p className="text-[10px] font-bold text-white sm:text-xs">
+					<p className="line-clamp-3 px-2 text-center text-xs font-bold break-words text-white sm:text-sm">
 						{colorNames[playerColor]}
 					</p>
 				</div>
