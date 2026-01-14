@@ -89,13 +89,21 @@ export function useGlobalController() {
 			try {
 				const localCOLORS = generateColorArray(numberOfColors);
 
-				// Only clear stores that are in the cache (have been joined)
-				const validStores = localCOLORS
-					.map((color) => colorStoresCache.get(color))
-					.filter((store) => store !== undefined);
+				// Clear all color stores - both cached and all 10 possible colors
+				// This ensures connections are reset even if some stores aren't in the cache
+				const allPossibleColors = generateColorArray(10); // all 10 possible colors
+				const storesToClear = [
+					...localCOLORS.map((c) => colorStoresCache.get(c)),
+					...allPossibleColors.map((c) => colorStoresCache.get(c))
+				].filter((store) => store !== undefined);
+
+				// Remove duplicates by store reference
+				const uniqueStores = Array.from(
+					new Map(storesToClear.map((s) => [s, s])).values()
+				);
 
 				// Clear each store's faction data
-				for (const store of validStores) {
+				for (const store of uniqueStores) {
 					if (store) {
 						await colorActions.clearFaction(store);
 					}

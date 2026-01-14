@@ -47,10 +47,15 @@ function assignColorsWithConstraints(
 			? COLORS.filter((c) => c !== previousColor)
 			: COLORS;
 
-		// Pick the color with the fewest assignments (maintains balance)
-		const bestColor = availableColors.reduce((best, color) =>
-			colorCounts[color] < colorCounts[best] ? color : best
+		// Find the minimum count among available colors
+		const minCount = Math.min(...availableColors.map((c) => colorCounts[c]));
+		// Get all colors with the minimum count (for random tie-breaking)
+		const colorsWithMinCount = availableColors.filter(
+			(c) => colorCounts[c] === minCount
 		);
+		// Randomly pick one of the least-used colors to avoid bias
+		const bestColor =
+			colorsWithMinCount[Math.floor(Math.random() * colorsWithMinCount.length)];
 
 		newColors[playerId] = bestColor;
 		colorCounts[bestColor]++;

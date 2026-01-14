@@ -24,8 +24,9 @@ export const AnimatedPulseRings: React.FC<AnimatedPulseRingsProps> = ({
 		Object.keys(factionState?.players || {}).length || 0
 	);
 
-	// Scale ring size based on player count (20-200px)
-	const maxRingSize = Math.max(80, Math.min(200, playerCount * 15));
+	// Scale ring size based on player count - make bigger difference between sizes
+	// Min 60px for 1 player, scales up to 240px for max players
+	const maxRingSize = Math.max(60, Math.min(240, playerCount * 20));
 
 	return (
 		<>
@@ -83,9 +84,9 @@ export const AnimatedPulseRings: React.FC<AnimatedPulseRingsProps> = ({
 						className="relative flex items-center justify-center rounded-full font-bold text-white shadow-lg"
 						style={{
 							backgroundColor: colorHex,
-							width: `${Math.max(60, playerCount * 4)}px`,
-							height: `${Math.max(60, playerCount * 4)}px`,
-							fontSize: `${Math.min(20, playerCount)}px`
+							width: `${Math.max(70, playerCount * 5)}px`,
+							height: `${Math.max(70, playerCount * 5)}px`,
+							fontSize: `${Math.min(24, playerCount * 1.5)}px`
 						}}
 					>
 						{playerCount}

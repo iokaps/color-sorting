@@ -90,6 +90,7 @@ const ColorPresenterInner: React.FC<ColorPresenterInnerProps> = ({
 
 	// Register all stores with the global controller
 	React.useEffect(() => {
+		// Register ALL stores (even inactive ones) so they're available for round calculations
 		registerColorStore('red', redStore.store);
 		registerColorStore('blue', blueStore.store);
 		registerColorStore('green', greenStore.store);
@@ -100,18 +101,8 @@ const ColorPresenterInner: React.FC<ColorPresenterInnerProps> = ({
 		registerColorStore('cyan', cyanStore.store);
 		registerColorStore('orange', orangeStore.store);
 		registerColorStore('lime', limeStore.store);
-	}, [
-		redStore.store,
-		blueStore.store,
-		greenStore.store,
-		yellowStore.store,
-		purpleStore.store,
-		pinkStore.store,
-		indigoStore.store,
-		cyanStore.store,
-		orangeStore.store,
-		limeStore.store
-	]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	// Get snapshots for all colors (unconditional hook calls - required by React Rules of Hooks)
 	// These capture reactive updates from the stores
