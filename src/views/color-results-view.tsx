@@ -118,7 +118,7 @@ export const ColorResultsView: React.FC = () => {
 							>
 								{isWinner && (
 									<p className="text-xs font-bold text-yellow-200 sm:text-sm">
-										★ WINNER ★
+										{config.winnerBadge}
 									</p>
 								)}
 								<p className="text-sm font-semibold sm:text-base">
@@ -172,7 +172,7 @@ export const ColorResultsView: React.FC = () => {
 			{/* Faction Size Comparison */}
 			<div className="w-full max-w-md space-y-2 rounded-lg border border-slate-200 bg-white p-3 sm:space-y-3 sm:rounded-2xl sm:p-4">
 				<h3 className="text-center text-xs font-bold text-slate-900 sm:text-sm">
-					Faction Comparison
+					{config.factionComparisonLabel}
 				</h3>
 				{COLORS.map((color) => {
 					const totalPlayers = Object.keys(playerScores).length;
@@ -228,7 +228,7 @@ export const ColorResultsView: React.FC = () => {
 			{/* Waiting message */}
 			{!isHost && (
 				<p className="animate-pulse text-center text-xs font-semibold text-slate-600 sm:text-sm">
-					Waiting for next round...
+					{config.waitingForNextRoundMd}
 				</p>
 			)}
 		</div>

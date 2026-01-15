@@ -49,6 +49,17 @@ export const schema = z.object({
 	roundNumber: z.string().default('Round'),
 	connectedWithCountMd: z.string().default('Connected with {count} others'),
 	scanQrCodeButton: z.string().default('Scan QR Code'),
+	shareYourCodeLabel: z.string().default('Share your code'),
+	orientationLabel: z.string().default('Others scan this to join your group'),
+	justYouLabel: z.string().default('Just you'),
+	wrongColorMd: z
+		.string()
+		.default('Wrong color! They are {color}, you are {yourColor}'),
+	ownQrCodeMd: z.string().default("That's your own QR code!"),
+	invalidQrCodeMd: z.string().default('Invalid QR code format'),
+	failedToConnectMd: z.string().default('Failed to connect. Try again.'),
+	connectedSuccessMd: z.string().default('✓ Connected! Your group is growing'),
+	alreadyConnectedMd: z.string().default('Already connected to this player'),
 	roundDurationSeconds: z.number().min(10).max(180).default(90),
 	numberOfColors: z.number().min(1).max(10).default(5),
 	winnerAnnouncement: z
@@ -62,6 +73,8 @@ export const schema = z.object({
 		.default(
 			'# Name the Colors\n\nCustomize the color names for this game round. For example: Red → Marketing, Blue → Engineering.'
 		),
+	colorNamesTitle: z.string().default('Color Names'),
+	logoPreviewLabel: z.string().default('Preview:'),
 	colorNameLabel: z.string().default('Color name'),
 	numberOfColorsLabel: z.string().default('Number of Colors'),
 	roundDurationLabel: z.string().default('Round duration (seconds)'),
@@ -78,6 +91,13 @@ export const schema = z.object({
 		.default('Round {roundNumber} is active. Players are connecting...'),
 
 	// Final results
+	winnerBadge: z.string().default('★ WINNER ★'),
+	factionComparisonLabel: z.string().default('Faction Comparison'),
+	waitingForNextRoundMd: z.string().default('Waiting for next round...'),
+	waitingForRoundMd: z.string().default('Waiting for round to start...'),
+	roundBreakdownLabel: z.string().default('Round Breakdown:'),
+	roundsPlayedLabel: z.string().default('rounds played'),
+	totalPointsLabel: z.string().default('Total points'),
 	finalResultsTitle: z.string().default('🏆 Final Results'),
 	roundWinnerLabel: z.string().default('Round {roundNumber}'),
 	playAgainButton: z.string().default('Play Again'),

@@ -160,7 +160,8 @@ export const FinalResultsView: React.FC = () => {
 												{player.name}
 											</p>
 											<p className="text-xs text-slate-500 sm:text-sm">
-												{Object.keys(player.roundScores).length} rounds played
+												{Object.keys(player.roundScores).length}{' '}
+												{config.roundsPlayedLabel}
 											</p>
 										</div>
 									</div>
@@ -169,7 +170,7 @@ export const FinalResultsView: React.FC = () => {
 											{player.totalScore}
 										</p>
 										<p className="text-xs text-slate-500 sm:text-sm">
-											Total points
+											{config.totalPointsLabel}
 										</p>
 									</div>
 								</div>
@@ -185,7 +186,7 @@ export const FinalResultsView: React.FC = () => {
 												isPresenter ? 'text-slate-300' : 'text-slate-700'
 											)}
 										>
-											Round Breakdown:
+											{config.roundBreakdownLabel}
 										</h4>
 										{sortedRounds.map((round) => {
 											const roundScore =

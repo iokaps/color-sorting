@@ -46,7 +46,7 @@ export const ColorAssignmentView: React.FC = () => {
 
 			{/* Waiting message */}
 			<p className="animate-pulse text-lg font-semibold text-slate-600 sm:text-xl">
-				Waiting for round to start...
+				{config.waitingForRoundMd}
 			</p>
 		</div>
 	);

@@ -123,7 +123,7 @@ const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
 					scannedColor = url.searchParams.get('color');
 				} catch {
 					setFeedbackType('error');
-					setFeedback('Invalid QR code format');
+					setFeedback(config.invalidQrCodeMd);
 					setTimeout(() => setFeedback(null), 2000);
 					setShowScanner(false);
 					return;
@@ -134,7 +134,12 @@ const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
 			if (scannedColor && scannedColor !== playerColor) {
 				setFeedbackType('error');
 				setFeedback(
-					`Wrong color! They are ${colorNames[scannedColor as ColorName] || scannedColor}, you are ${colorNames[playerColor]}`
+					config.wrongColorMd
+						.replace(
+							'{color}',
+							colorNames[scannedColor as ColorName] || scannedColor
+						)
+						.replace('{yourColor}', colorNames[playerColor])
 				);
 				setTimeout(() => setFeedback(null), 3000);
 				setShowScanner(false);
@@ -144,7 +149,7 @@ const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
 			// Don't connect to yourself
 			if (scannedClientId === kmClient.id) {
 				setFeedbackType('info');
-				setFeedback("That's your own QR code!");
+				setFeedback(config.ownQrCodeMd);
 				setTimeout(() => setFeedback(null), 2000);
 				setShowScanner(false);
 				return;
@@ -158,17 +163,17 @@ const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
 
 			if (result.alreadyConnected) {
 				setFeedbackType('info');
-				setFeedback('Already connected to this player');
+				setFeedback(config.alreadyConnectedMd);
 			} else {
 				setFeedbackType('success');
-				setFeedback('✓ Connected! Your group is growing');
+				setFeedback(config.connectedSuccessMd);
 			}
 
 			// Clear feedback after 3 seconds
 			setTimeout(() => setFeedback(null), 3000);
 		} catch {
 			setFeedbackType('error');
-			setFeedback('Failed to connect. Try again.');
+			setFeedback(config.failedToConnectMd);
 			setTimeout(() => setFeedback(null), 2000);
 		}
 
@@ -201,7 +206,7 @@ const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
 						</p>
 						<p className="text-[10px] text-blue-700 sm:text-xs">
 							{playerCount <= 1
-								? 'Just you'
+								? config.justYouLabel
 								: config.connectedWithCountMd.replace(
 										'{count}',
 										(playerCount - 1).toString()
@@ -221,13 +226,13 @@ const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
 			{/* QR Code section */}
 			<div className="w-full max-w-xs space-y-2 rounded-xl bg-gradient-to-b from-slate-50 to-slate-100 p-4 shadow-sm sm:max-w-sm sm:p-5">
 				<p className="text-center text-xs font-semibold text-slate-700">
-					Share your code
+					{config.shareYourCodeLabel}
 				</p>
 				<div className="flex justify-center rounded-lg bg-white p-3">
 					<KmQrCode data={qrCodeUrl} size={150} />
 				</div>
 				<p className="text-center text-[11px] text-slate-500">
-					Others scan this to join your group
+					{config.orientationLabel}
 				</p>
 			</div>
 

@@ -179,7 +179,7 @@ export const ColorNamingView: React.FC = () => {
 
 			{/* Color Names Section */}
 			<div>
-				<h3 className="mb-4 text-lg font-semibold">Color Names</h3>
+				<h3 className="mb-4 text-lg font-semibold">{config.colorNamesTitle}</h3>
 				<div className="grid gap-6 sm:grid-cols-2">
 					{currentColors.map((color) => (
 						<div
@@ -275,7 +275,9 @@ export const ColorNamingView: React.FC = () => {
 				{/* Logo Preview */}
 				{logoPreview && (
 					<div className="mt-4">
-						<p className="mb-2 text-sm font-medium">Preview:</p>
+						<p className="mb-2 text-sm font-medium">
+							{config.logoPreviewLabel}
+						</p>
 						<img
 							src={logoPreview}
 							alt="Logo preview"
