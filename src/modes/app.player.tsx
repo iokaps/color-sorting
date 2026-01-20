@@ -88,7 +88,14 @@ const App: React.FC = () => {
 					<ColorSortingView key={`sorting-${playerColor}-${roundNumber}`} />
 				) : roundNumber > 0 ? (
 					<ColorResultsView />
-				) : null}
+				) : (
+					// Player has color but round hasn't started yet (e.g., reconnecting)
+					<div className="flex h-full flex-col items-center justify-center space-y-4 px-4 text-center">
+						<p className="text-lg font-semibold text-slate-900">
+							{config.waitingForRoundMd}
+						</p>
+					</div>
+				)}
 			</PlayerLayout.Main>
 
 			<PlayerLayout.Footer>

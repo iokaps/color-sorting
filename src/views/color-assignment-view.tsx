@@ -15,8 +15,9 @@ export const ColorAssignmentView: React.FC = () => {
 	if (!playerColor) {
 		return (
 			<div className="flex h-full flex-col items-center justify-center space-y-4">
+				<div className="km-spinner size-8 border-slate-400" />
 				<p className="text-lg font-semibold text-slate-900">{config.loading}</p>
-				<p className="text-sm text-slate-600">
+				<p className="text-sm text-slate-500">
 					Waiting for host to assign colors...
 				</p>
 			</div>
@@ -24,18 +25,26 @@ export const ColorAssignmentView: React.FC = () => {
 	}
 
 	return (
-		<div className="flex h-full w-full flex-col items-center justify-center space-y-6 px-4 py-8 sm:space-y-8 sm:py-12">
-			{/* Large color card */}
-			<div
-				className={`flex h-40 w-40 items-center justify-center rounded-3xl shadow-2xl sm:h-64 sm:w-64 ${getColorClass(playerColor)}`}
-			>
-				<div className="px-4 text-center">
-					<p className="text-lg font-light text-white/80 sm:text-2xl">
-						You are
-					</p>
-					<p className="line-clamp-3 text-3xl font-bold break-words text-white sm:text-5xl">
-						{colorNames[playerColor]}
-					</p>
+		<div className="flex h-full w-full flex-col items-center justify-center space-y-8 px-4 py-8 sm:py-12">
+			{/* Large color card with glow effect */}
+			<div className="relative">
+				{/* Glow effect */}
+				<div
+					className={`absolute -inset-4 rounded-[2rem] opacity-30 blur-2xl ${getColorClass(playerColor)}`}
+				/>
+				<div
+					className={`relative flex h-44 w-44 items-center justify-center rounded-3xl shadow-2xl sm:h-64 sm:w-64 ${getColorClass(playerColor)}`}
+				>
+					{/* Gradient overlay for depth */}
+					<div className="absolute inset-0 rounded-3xl bg-gradient-to-b from-white/20 to-transparent" />
+					<div className="relative px-4 text-center">
+						<p className="text-base font-light tracking-wide text-white/90 sm:text-xl">
+							You are
+						</p>
+						<p className="mt-1 line-clamp-3 text-3xl font-bold break-words text-white drop-shadow-sm sm:text-5xl">
+							{colorNames[playerColor]}
+						</p>
+					</div>
 				</div>
 			</div>
 
@@ -44,10 +53,17 @@ export const ColorAssignmentView: React.FC = () => {
 				<Markdown>{config.colorAssignmentMd}</Markdown>
 			</div>
 
-			{/* Waiting message */}
-			<p className="animate-pulse text-lg font-semibold text-slate-600 sm:text-xl">
-				{config.waitingForRoundMd}
-			</p>
+			{/* Modern waiting indicator with bouncing dots */}
+			<div className="flex items-center gap-3">
+				<div className="flex gap-1">
+					<span className="size-2 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.3s]" />
+					<span className="size-2 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.15s]" />
+					<span className="size-2 animate-bounce rounded-full bg-slate-400" />
+				</div>
+				<p className="text-base font-medium text-slate-500 sm:text-lg">
+					{config.waitingForRoundMd}
+				</p>
+			</div>
 		</div>
 	);
 };

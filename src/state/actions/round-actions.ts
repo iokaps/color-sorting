@@ -19,6 +19,26 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 /**
+ * Generates a unique 6-character alphanumeric code
+ */
+function generateShortCode(existingCodes: Set<string>): string {
+	const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Exclude confusing chars: 0, O, I, 1
+	let code: string;
+	let attempts = 0;
+	const maxAttempts = 100;
+
+	do {
+		code = '';
+		for (let i = 0; i < 6; i++) {
+			code += chars.charAt(Math.floor(Math.random() * chars.length));
+		}
+		attempts++;
+	} while (existingCodes.has(code) && attempts < maxAttempts);
+
+	return code;
+}
+
+/**
  * Assigns colors to players ensuring:
  * 1. Equal distribution (within ±1 player per color)
  * 2. No player gets the same color as previous round
@@ -110,6 +130,19 @@ export const roundActions = {
 				previousColors,
 				globalState.numberOfColors
 			);
+
+			// Generate short codes for all players (for simpler QR codes)
+			const existingCodes = new Set(
+				Object.values(globalState.playerShortCodes)
+			);
+			for (const playerId of onlinePlayerIds) {
+				// Only generate new code if player doesn't have one
+				if (!globalState.playerShortCodes[playerId]) {
+					const shortCode = generateShortCode(existingCodes);
+					globalState.playerShortCodes[playerId] = shortCode;
+					existingCodes.add(shortCode);
+				}
+			}
 
 			// Initialize round state
 			globalState.roundNumber += 1;

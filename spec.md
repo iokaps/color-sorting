@@ -10,6 +10,7 @@ Color Sorting is a real-time network game where players are randomly assigned on
 
 - Host can customize the number of colors: **1-10 colors** (configurable before game starts)
 - Host can customize each color's display name (e.g., Red → "Ruby", Blue → "Sapphire")
+- **Color name limit: 20 characters maximum** to prevent layout issues
 - Default is 5 colors: Ruby, Sapphire, Emerald, Gold, Purple
 - Available color options: Ruby, Sapphire, Emerald, Gold, Purple, Pink, Indigo, Cyan, Orange, Lime
 - Colors must be assigned before the game starts via the "Edit Color Names" dialog
@@ -23,8 +24,11 @@ Color Sorting is a real-time network game where players are randomly assigned on
 
 ### Connection via QR Code
 
-- Each player's device displays a unique QR code encoding their player information via a deep link
-- QR format: `${window.location.origin}/join?playerCode=${kmClient.id}&color=${playerColor}`
+- Each player's device displays a unique QR code encoding their player information
+- **QR format (simplified)**: `{SHORTCODE}:{color}` where SHORTCODE is a unique 6-character alphanumeric code
+- Short codes are generated when colors are assigned and stored in `playerShortCodes` (clientId → 6-char code)
+- Short codes use characters `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (excludes confusing chars: 0, O, I, 1)
+- Legacy URL format also supported for backward compatibility: `${window.location.origin}/join?playerCode=${kmClient.id}&color=${playerColor}`
 - Players must find others with the **same color** and scan their QR code
 - Scanning validates that both players have the same color assignment
 - On successful scan, an edge connection is created between the two players' IDs in the faction graph
@@ -49,7 +53,7 @@ Color Sorting is a real-time network game where players are randomly assigned on
 
 ### Round Duration
 
-- Host can customize round duration: **10-600 seconds** (default 90 seconds)
+- Host can customize round duration: **10-180 seconds** (default 90 seconds, clamped to valid range)
 - Timer is server-synchronized using `kmClient.serverTimestamp()` for fairness across all devices
 - Round automatically ends when the duration expires (no manual intervention needed)
 - Global controller (elected leader among connected devices) monitors elapsed time and triggers round end
@@ -176,13 +180,34 @@ Color Sorting is a real-time network game where players are randomly assigned on
 
 #### Active Round Phase
 
-- See colored blocks for each color with live faction counts
-- Colors shown dynamically based on numberOfColors configuration (1-10 possible)
-- Default display includes: Ruby (red), Sapphire (blue), Emerald (green), Gold (yellow), Purple (purple), Pink (pink), Indigo (indigo), Cyan (cyan), Orange (orange), Lime (lime)
-- Blocks update reactively in real-time as players scan QR codes and join factions
-- Large, bold numbers for visibility on large screens
-- Display shows countdown timer
-- Example display (5 colors):
+- See countdown timer for round duration
+- **Visualization Modes** - Host can select from 5 different visualization modes:
+  1. **Pulse Rings** (default): Animated concentric rings for each color that pulse with faction size growth
+     - Glow effect intensity based on player count
+     - Ripple animation when new players join
+     - Logarithmic scaling for better visual balance
+  2. **Network Graph**: SVG nodes representing players with edges showing connections
+     - Circular layout with nodes around a central point
+     - Edges animate in when connections form
+     - Larger node counts show more connected graphs
+  3. **Racing Bars**: Horizontal animated bar chart showing faction rankings
+     - Bars re-order as faction sizes change
+     - Medal icons (🥇🥈🥉) for top 3
+     - Smooth width transitions
+  4. **Bubbles**: Physics-based floating bubbles visualization
+     - Bubble size proportional to faction size
+     - Bouncing animation with wall collision
+     - Color-coded circles with player counts
+  5. **Pie Chart**: Animated donut chart showing faction proportions
+     - Percentage breakdown of each faction
+     - Legend with color swatches
+     - Glowing highlight for leading faction
+
+- Host can change visualization mode:
+  - **Before game**: In color naming configuration screen
+  - **During game**: In round control panel
+- All visualizations update reactively in real-time
+- Example display (Pulse mode with 5 colors):
   ```
   💎 RUBY: 23 | 💙 SAPPHIRE: 18 | 💚 EMERALD: 31 | 💛 GOLD: 28 | 💜 PURPLE: 22
   ```
@@ -214,6 +239,7 @@ playerScores: Record<clientId, PlayerScore>; // Accumulated scores: {totalScore,
 totalRounds: number; // Total rounds to play
 gameComplete: boolean; // Game finished (all rounds done)
 winBonus: number; // Points awarded to winning faction players
+presenterVisualizationMode: 'pulse' | 'network' | 'bars' | 'bubbles' | 'pie'; // Presenter display mode
 ```
 
 #### Dynamic Color Stores (one per color: color-red, color-blue, etc.)

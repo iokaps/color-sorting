@@ -78,21 +78,27 @@ export const ColorResultsView: React.FC = () => {
 	};
 
 	return (
-		<div className="flex h-full w-full flex-col items-center justify-center gap-3 overflow-auto px-2 py-3 sm:gap-5 sm:px-4 sm:py-6">
-			{/* Winner announcement */}
-			<div
-				className={`w-full max-w-md rounded-xl px-3 py-4 shadow-xl sm:rounded-2xl sm:px-6 sm:py-6 ${getColorClass(winningColor)}`}
-			>
-				<div className="flex items-center justify-center gap-2">
-					<Trophy className="size-5 text-white sm:size-6" />
-					<p className="text-center text-lg font-bold break-words text-white sm:text-2xl">
-						{winningColors.map((c) => colorNames[c]).join(' & ')}
-						wins!
+		<div className="flex h-full w-full flex-col items-center justify-center gap-4 overflow-auto px-2 py-4 sm:gap-6 sm:px-4 sm:py-6">
+			{/* Winner announcement with glow */}
+			<div className="relative w-full max-w-md">
+				<div
+					className={`absolute -inset-2 rounded-3xl opacity-40 blur-xl ${getColorClass(winningColor)}`}
+				/>
+				<div
+					className={`relative overflow-hidden rounded-2xl px-4 py-5 shadow-xl sm:px-6 sm:py-6 ${getColorClass(winningColor)}`}
+				>
+					<div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+					<div className="relative flex items-center justify-center gap-2">
+						<Trophy className="size-6 text-white drop-shadow sm:size-8" />
+						<p className="text-center text-xl font-bold text-white drop-shadow sm:text-3xl">
+							{winningColors.map((c) => colorNames[c]).join(' & ')}
+							wins!
+						</p>
+					</div>
+					<p className="relative mt-2 text-center text-sm font-medium text-white/90 sm:text-base">
+						{maxFactionSize} players connected
 					</p>
 				</div>
-				<p className="mt-2 text-center text-sm text-white/90 sm:text-base">
-					{maxFactionSize} players connected
-				</p>
 			</div>
 
 			{/* Results table */}
@@ -104,29 +110,32 @@ export const ColorResultsView: React.FC = () => {
 					)}
 				</h2>
 
-				<div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+				<div className="grid grid-cols-2 gap-2 sm:gap-3">
 					{COLORS.map((color) => {
 						const isWinner = winningColors.includes(color);
 						return (
 							<div
 								key={color}
 								className={cn(
-									'rounded-lg px-2 py-2 text-center text-white shadow-md transition-all sm:rounded-xl sm:px-4 sm:py-3',
+									'relative overflow-hidden rounded-xl px-3 py-3 text-center text-white shadow-md transition-all sm:px-4 sm:py-4',
 									getColorClass(color),
-									isWinner && 'ring-2 ring-yellow-300'
+									isWinner && 'ring-2 ring-yellow-300 ring-offset-2'
 								)}
 							>
-								{isWinner && (
-									<p className="text-xs font-bold text-yellow-200 sm:text-sm">
-										{config.winnerBadge}
+								<div className="absolute inset-0 bg-gradient-to-b from-white/15 to-transparent" />
+								<div className="relative">
+									{isWinner && (
+										<p className="text-xs font-bold text-yellow-200 sm:text-sm">
+											{config.winnerBadge}
+										</p>
+									)}
+									<p className="text-sm font-semibold drop-shadow-sm sm:text-base">
+										{colorNames[color]}
 									</p>
-								)}
-								<p className="text-sm font-semibold sm:text-base">
-									{colorNames[color]}
-								</p>
-								<p className="text-lg font-bold sm:text-xl">
-									{roundResults[color]}
-								</p>
+									<p className="text-xl font-bold drop-shadow-sm sm:text-2xl">
+										{roundResults[color]}
+									</p>
+								</div>
 							</div>
 						);
 					})}
@@ -135,11 +144,11 @@ export const ColorResultsView: React.FC = () => {
 
 			{/* Cumulative Leaderboard */}
 			{Object.keys(playerScores).length > 0 && (
-				<div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-3 sm:rounded-2xl sm:p-4">
-					<h3 className="mb-2 text-center text-sm font-bold text-slate-900 sm:mb-3 sm:text-base">
+				<div className="km-card w-full max-w-md">
+					<h3 className="mb-3 text-center text-sm font-bold text-slate-900 sm:text-base">
 						{config.cumulativeLeaderboardLabel}
 					</h3>
-					<div className="space-y-1.5 sm:space-y-2">
+					<div className="space-y-2">
 						{Object.entries(playerScores)
 							.map(([, player]) => ({
 								name: player.name,
@@ -150,28 +159,32 @@ export const ColorResultsView: React.FC = () => {
 							.map((player, idx) => (
 								<div
 									key={idx}
-									className="flex items-center justify-between rounded-lg bg-slate-50 px-2 py-1.5 sm:px-3 sm:py-2"
+									className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 sm:px-4 sm:py-2.5"
 								>
 									<div className="flex items-center gap-2">
-										<span className="text-xs font-bold text-slate-500 sm:text-sm">
-											#{idx + 1}
+										<span className="flex size-6 items-center justify-center text-sm font-bold text-slate-500">
+											{idx === 0 && '🥇'}
+											{idx === 1 && '🥈'}
+											{idx === 2 && '🥉'}
+											{idx > 2 && `#${idx + 1}`}
 										</span>
-										<span className="text-xs font-semibold text-slate-900 sm:text-sm">
+										<span className="text-sm font-semibold text-slate-900">
 											{player.name}
 										</span>
 									</div>
-									<span className="text-xs font-bold text-slate-900 sm:text-sm">
+									<span className="text-sm font-bold text-slate-900">
 										{player.totalScore}
 									</span>
 								</div>
 							))}
+						)
 					</div>
 				</div>
 			)}
 
 			{/* Faction Size Comparison */}
-			<div className="w-full max-w-md space-y-2 rounded-lg border border-slate-200 bg-white p-3 sm:space-y-3 sm:rounded-2xl sm:p-4">
-				<h3 className="text-center text-xs font-bold text-slate-900 sm:text-sm">
+			<div className="km-card w-full max-w-md space-y-3">
+				<h3 className="text-center text-sm font-bold text-slate-900">
 					{config.factionComparisonLabel}
 				</h3>
 				{COLORS.map((color) => {
@@ -181,18 +194,18 @@ export const ColorResultsView: React.FC = () => {
 					const isWinner = winningColors.includes(color);
 
 					return (
-						<div key={color} className="space-y-1">
+						<div key={color} className="space-y-1.5">
 							<div className="flex items-center justify-between">
-								<span className="text-xs font-bold text-slate-900 sm:text-sm">
+								<span className="text-sm font-semibold text-slate-900">
 									{colorNames[color]}
 								</span>
-								<span className="text-xs font-bold text-slate-700 sm:text-sm">
+								<span className="text-sm font-bold text-slate-700">
 									{roundResults[color]} {config.factionSizeLabel.toLowerCase()}
 								</span>
 							</div>
-							<div className="h-2 overflow-hidden rounded-full bg-slate-200">
+							<div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
 								<div
-									className={`h-full transition-all ${
+									className={`h-full transition-all duration-500 ${
 										isWinner
 											? 'bg-gradient-to-r from-yellow-400 to-yellow-500'
 											: `bg-gradient-to-r ${getBackgroundGradient(color)}`
@@ -208,7 +221,7 @@ export const ColorResultsView: React.FC = () => {
 			</div>
 
 			{/* Round progress */}
-			<div className="text-center text-xs text-slate-600 sm:text-sm">
+			<div className="rounded-full bg-slate-100 px-4 py-1.5 text-center text-sm font-medium text-slate-600">
 				Round {roundNumber} of {totalRounds}
 			</div>
 
@@ -216,20 +229,25 @@ export const ColorResultsView: React.FC = () => {
 			{isHost && (
 				<button
 					type="button"
-					className="km-btn-primary h-10 w-full max-w-xs text-sm sm:h-11 sm:max-w-sm"
+					className="km-btn-primary h-11 w-full max-w-xs sm:max-w-sm"
 					onClick={handleNextRound}
 					disabled={buttonCooldown}
 				>
-					<CircleArrowRight className="size-4" />
+					<CircleArrowRight className="size-5" />
 					{config.nextRoundButton}
 				</button>
 			)}
 
 			{/* Waiting message */}
 			{!isHost && (
-				<p className="animate-pulse text-center text-xs font-semibold text-slate-600 sm:text-sm">
+				<div className="flex items-center gap-2 text-sm font-medium text-slate-500">
+					<div className="flex gap-1">
+						<span className="size-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.3s]" />
+						<span className="size-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.15s]" />
+						<span className="size-1.5 animate-bounce rounded-full bg-slate-400" />
+					</div>
 					{config.waitingForNextRoundMd}
-				</p>
+				</div>
 			)}
 		</div>
 	);

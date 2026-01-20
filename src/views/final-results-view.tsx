@@ -74,13 +74,16 @@ export const FinalResultsView: React.FC = () => {
 	const topPlayers = leaderboard.filter((p) => p.totalScore === topScore);
 
 	return (
-		<div className="flex h-full w-full flex-col items-center justify-center gap-3 overflow-auto px-2 py-3 sm:gap-5 sm:px-4 sm:py-6">
+		<div className="flex h-full w-full flex-col items-center justify-center gap-4 overflow-auto px-2 py-4 sm:gap-6 sm:px-4 sm:py-6">
 			{/* Title */}
 			<div className="text-center">
-				<Trophy className="mx-auto mb-1 size-8 text-yellow-500 sm:size-12" />
+				<div className="relative mx-auto mb-2 inline-block">
+					<div className="absolute -inset-3 rounded-full bg-yellow-400/30 blur-xl" />
+					<Trophy className="relative size-10 text-yellow-500 drop-shadow-lg sm:size-14" />
+				</div>
 				<h1
 					className={cn(
-						'text-xl font-bold sm:text-3xl',
+						'text-2xl font-bold sm:text-4xl',
 						isPresenter ? 'text-white' : 'text-slate-900'
 					)}
 				>
@@ -88,8 +91,8 @@ export const FinalResultsView: React.FC = () => {
 				</h1>
 				<p
 					className={cn(
-						'mt-1 text-xs sm:text-sm',
-						isPresenter ? 'text-slate-300' : 'text-slate-600'
+						'mt-1 text-sm sm:text-base',
+						isPresenter ? 'text-slate-300' : 'text-slate-500'
 					)}
 				>
 					{config.gameCompleteMessage}
@@ -98,41 +101,47 @@ export const FinalResultsView: React.FC = () => {
 
 			{/* Overall winner banner with tie handling */}
 			{topScore > 0 && (
-				<div className="w-full max-w-md rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500 px-4 py-3 text-center shadow-lg sm:rounded-2xl sm:px-6 sm:py-4">
-					<p className="text-sm font-semibold text-slate-800 sm:text-base">
-						{topPlayers.length > 1 ? 'Tied for First!' : 'Winner!'}
-					</p>
-					<div className="mt-2 space-y-1">
-						{topPlayers.map((player) => (
-							<div key={player.clientId}>
-								<p className="text-lg font-bold text-white sm:text-2xl">
-									{player.name}
-								</p>
-								<p className="text-sm font-semibold text-slate-800 sm:text-base">
-									{player.totalScore} points
-								</p>
+				<div className="relative w-full max-w-md">
+					<div className="absolute -inset-2 rounded-3xl bg-yellow-400/40 blur-xl" />
+					<div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-500 px-5 py-4 text-center shadow-xl sm:px-6 sm:py-5">
+						<div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+						<div className="relative">
+							<p className="text-sm font-semibold text-yellow-900/80 sm:text-base">
+								{topPlayers.length > 1 ? '🎉 Tied for First!' : '🌟 Winner!'}
+							</p>
+							<div className="mt-2 space-y-1">
+								{topPlayers.map((player) => (
+									<div key={player.clientId}>
+										<p className="text-xl font-bold text-white drop-shadow sm:text-3xl">
+											{player.name}
+										</p>
+										<p className="text-sm font-semibold text-yellow-900/70 sm:text-base">
+											{player.totalScore} points
+										</p>
+									</div>
+								))}
 							</div>
-						))}
+						</div>
 					</div>
 				</div>
 			)}
 
 			{/* Leaderboard */}
-			<div className="w-full max-w-2xl space-y-2 sm:space-y-3">
+			<div className="w-full max-w-2xl space-y-3 sm:space-y-4">
 				<h2
 					className={cn(
-						'text-center text-sm font-semibold sm:text-base',
+						'text-center text-base font-semibold sm:text-lg',
 						isPresenter ? 'text-slate-300' : 'text-slate-700'
 					)}
 				>
 					Leaderboard
 				</h2>
 
-				<div className="space-y-1.5 sm:space-y-2">
+				<div className="space-y-2 sm:space-y-3">
 					{leaderboard.map((player, index) => (
 						<div
 							key={player.clientId}
-							className="rounded-lg bg-white shadow-md"
+							className="shadow-card hover:shadow-card-hover overflow-hidden rounded-2xl bg-white transition-shadow"
 						>
 							{/* Main row - clickable to expand */}
 							<button
@@ -142,34 +151,36 @@ export const FinalResultsView: React.FC = () => {
 										expandedPlayer === player.clientId ? null : player.clientId
 									)
 								}
-								className="w-full px-3 py-2 text-left hover:bg-slate-50 sm:px-4 sm:py-3"
+								className="w-full px-4 py-3 text-left hover:bg-slate-50 sm:px-5 sm:py-4"
 							>
 								<div className="flex items-center justify-between gap-3">
-									<div className="flex min-w-0 items-center gap-2">
+									<div className="flex min-w-0 items-center gap-3">
 										{/* Medal for top 3 */}
-										<div className="flex w-8 items-center justify-center text-lg font-bold sm:w-10">
+										<div className="flex size-10 items-center justify-center text-xl font-bold sm:size-12 sm:text-2xl">
 											{index === 0 && '🥇'}
 											{index === 1 && '🥈'}
 											{index === 2 && '🥉'}
 											{index > 2 && (
-												<span className="text-xs">{index + 1}</span>
+												<span className="text-sm text-slate-400">
+													{index + 1}
+												</span>
 											)}
 										</div>
 										<div className="min-w-0">
-											<p className="truncate font-semibold text-slate-900 sm:text-base">
+											<p className="truncate text-base font-semibold text-slate-900 sm:text-lg">
 												{player.name}
 											</p>
-											<p className="text-xs text-slate-500 sm:text-sm">
+											<p className="text-sm text-slate-500">
 												{Object.keys(player.roundScores).length}{' '}
 												{config.roundsPlayedLabel}
 											</p>
 										</div>
 									</div>
 									<div className="text-right">
-										<p className="text-lg font-bold text-slate-900 sm:text-xl">
+										<p className="text-xl font-bold text-slate-900 sm:text-2xl">
 											{player.totalScore}
 										</p>
-										<p className="text-xs text-slate-500 sm:text-sm">
+										<p className="text-sm text-slate-500">
 											{config.totalPointsLabel}
 										</p>
 									</div>

@@ -1,12 +1,38 @@
 import { config } from '@/config';
 import { useServerTimer } from '@/hooks/useServerTime';
 import { kmClient } from '@/services/km-client';
+import { globalActions } from '@/state/actions/global-actions';
 import { roundActions } from '@/state/actions/round-actions';
-import { globalStore } from '@/state/stores/global-store';
+import {
+	globalStore,
+	type PresenterVisualizationMode
+} from '@/state/stores/global-store';
+import { cn } from '@/utils/cn';
 import { useSnapshot } from '@kokimoki/app';
 import { KmTimeCountdown } from '@kokimoki/shared';
-import { CirclePlay, CircleStop, Users } from 'lucide-react';
+import {
+	BarChart3,
+	Circle,
+	CirclePlay,
+	CircleStop,
+	Network,
+	PieChart,
+	Sparkles,
+	Users
+} from 'lucide-react';
 import * as React from 'react';
+
+const visualizationModes: {
+	mode: PresenterVisualizationMode;
+	label: string;
+	icon: React.ElementType;
+}[] = [
+	{ mode: 'pulse', label: config.visualizationPulseLabel, icon: Sparkles },
+	{ mode: 'network', label: config.visualizationNetworkLabel, icon: Network },
+	{ mode: 'bars', label: config.visualizationBarsLabel, icon: BarChart3 },
+	{ mode: 'bubbles', label: config.visualizationBubblesLabel, icon: Circle },
+	{ mode: 'pie', label: config.visualizationPieLabel, icon: PieChart }
+];
 
 export const ColorRoundControlView: React.FC = () => {
 	const {
@@ -15,7 +41,8 @@ export const ColorRoundControlView: React.FC = () => {
 		roundStartTimestamp,
 		roundActive,
 		roundDurationSeconds,
-		playerColors
+		playerColors,
+		presenterVisualizationMode
 	} = useSnapshot(globalStore.proxy);
 	const connections = useSnapshot(globalStore.connections);
 	const [buttonCooldown, setButtonCooldown] = React.useState(false);
@@ -143,6 +170,32 @@ export const ColorRoundControlView: React.FC = () => {
 					</>
 				)}
 			</p>
+
+			{/* Visualization mode selector */}
+			<div className="mt-4 flex flex-col items-center gap-3">
+				<p className="text-sm font-medium text-slate-600">
+					{config.visualizationModeLabel}
+				</p>
+				<div className="flex flex-wrap justify-center gap-2">
+					{visualizationModes.map(({ mode, label, icon: Icon }) => (
+						<button
+							key={mode}
+							type="button"
+							onClick={() => globalActions.setPresenterVisualizationMode(mode)}
+							className={cn(
+								'flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all',
+								presenterVisualizationMode === mode
+									? 'bg-blue-500 text-white shadow-md'
+									: 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+							)}
+							title={label}
+						>
+							<Icon className="size-4" />
+							<span className="hidden sm:inline">{label}</span>
+						</button>
+					))}
+				</div>
+			</div>
 		</div>
 	);
 };

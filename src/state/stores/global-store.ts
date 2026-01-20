@@ -3,6 +3,13 @@ import { generateColorArray } from '@/utils/color-utils';
 
 export type ColorName = string;
 
+export type PresenterVisualizationMode =
+	| 'pulse'
+	| 'network'
+	| 'bars'
+	| 'bubbles'
+	| 'pie';
+
 export interface RoundResult {
 	winningColors: ColorName[]; // array to support ties
 	winningColorNames: string[];
@@ -33,6 +40,7 @@ export interface GlobalState {
 	players: Record<string, { name: string }>;
 	showPresenterQr: boolean;
 	playerColors: Record<string, ColorName>; // clientId -> assigned color
+	playerShortCodes: Record<string, string>; // clientId -> 6-char short code for QR
 	colorNames: Record<ColorName, string>; // color -> custom name (e.g., red -> "Marketing")
 	roundNumber: number;
 	totalRounds: number; // total rounds to play
@@ -46,6 +54,7 @@ export interface GlobalState {
 	gameComplete: boolean; // true when all rounds are done
 	playerScores: Record<string, PlayerScore>; // clientId -> player score data
 	winBonus: number; // bonus points for winning faction
+	presenterVisualizationMode: PresenterVisualizationMode; // visualization mode for presenter screen
 }
 
 function createInitialColorNames(
@@ -89,6 +98,7 @@ const initialState: GlobalState = {
 	players: {},
 	showPresenterQr: true,
 	playerColors: {},
+	playerShortCodes: {},
 	colorNames: createInitialColorNames(4),
 	roundNumber: 0,
 	totalRounds: 3,
@@ -101,7 +111,8 @@ const initialState: GlobalState = {
 	logoUrl: null,
 	gameComplete: false,
 	playerScores: {},
-	winBonus: 10
+	winBonus: 10,
+	presenterVisualizationMode: 'pulse'
 };
 
 export const globalStore = kmClient.store<GlobalState>('global', initialState);

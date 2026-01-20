@@ -1,4 +1,8 @@
 import { AnimatedPulseRings } from '@/components/animated-pulse-rings';
+import { BubbleChart } from '@/components/bubble-chart';
+import { NetworkVisualization } from '@/components/network-visualization';
+import { PieChart } from '@/components/pie-chart';
+import { RacingBars } from '@/components/racing-bars';
 import { config } from '@/config';
 import { useDynamicStore } from '@/hooks/useDynamicStore';
 import { registerColorStore } from '@/hooks/useGlobalController';
@@ -8,7 +12,11 @@ import {
 	getColorStoreName,
 	type ColorFactionState
 } from '@/state/stores/color-store';
-import { globalStore, type ColorName } from '@/state/stores/global-store';
+import {
+	globalStore,
+	type ColorName,
+	type PresenterVisualizationMode
+} from '@/state/stores/global-store';
 import { generateColorArray } from '@/utils/color-utils';
 import { useSnapshot } from '@kokimoki/app';
 import { KmTimeCountdown, useKmConfettiContext } from '@kokimoki/shared';
@@ -23,6 +31,7 @@ interface ColorPresenterInnerProps {
 	roundActive: boolean;
 	roundDurationSeconds: number;
 	roundResults: Record<ColorName, number>;
+	visualizationMode: PresenterVisualizationMode;
 }
 
 /**
@@ -36,7 +45,8 @@ const ColorPresenterInner: React.FC<ColorPresenterInnerProps> = ({
 	roundStartTimestamp,
 	roundActive,
 	roundDurationSeconds,
-	roundResults
+	roundResults,
+	visualizationMode
 }) => {
 	const serverTime = useServerTimer(250);
 	const confetti = useKmConfettiContext();
@@ -188,32 +198,73 @@ const ColorPresenterInner: React.FC<ColorPresenterInnerProps> = ({
 				</div>
 			)}
 
-			{/* Animated pulse rings display - shows faction size growth */}
-			<div className="grid w-full max-w-6xl grid-cols-2 gap-6 lg:grid-cols-3 xl:grid-cols-5">
-				{colors.map((color) => (
-					<AnimatedPulseRings
-						key={color}
-						color={color}
-						colorName={colorNames[color]}
-						factionState={dynamicSnapshotsAll[color]}
-					/>
-				))}
-			</div>
+			{/* Visualization based on selected mode */}
+			{visualizationMode === 'pulse' && (
+				<div className="grid w-full max-w-6xl grid-cols-2 gap-6 lg:grid-cols-3 xl:grid-cols-5">
+					{colors.map((color) => (
+						<AnimatedPulseRings
+							key={color}
+							color={color}
+							colorName={colorNames[color]}
+							factionState={dynamicSnapshotsAll[color]}
+						/>
+					))}
+				</div>
+			)}
 
-			{/* Summary - total players across all colors */}
-			<div className="rounded-2xl border border-slate-600/50 bg-slate-700/50 px-6 py-4 text-center backdrop-blur-sm lg:px-8 lg:py-6">
-				<p className="text-3xl font-bold text-white lg:text-4xl">
-					{colors.reduce((sum, color) => {
-						const players = Object.keys(
-							dynamicSnapshotsAll[color]?.players || {}
-						);
-						return sum + players.length;
-					}, 0)}
-				</p>
-				<p className="text-base text-slate-300 lg:text-lg">
-					{config.totalConnectedLabel}
-				</p>
-			</div>
+			{visualizationMode === 'network' && (
+				<div className="grid w-full max-w-6xl grid-cols-2 gap-6 lg:grid-cols-3 xl:grid-cols-5">
+					{colors.map((color) => (
+						<NetworkVisualization
+							key={color}
+							color={color}
+							colorName={colorNames[color]}
+							factionState={dynamicSnapshotsAll[color]}
+						/>
+					))}
+				</div>
+			)}
+
+			{visualizationMode === 'bars' && (
+				<RacingBars
+					colors={colors}
+					colorNames={colorNames}
+					factionStates={dynamicSnapshotsAll}
+				/>
+			)}
+
+			{visualizationMode === 'bubbles' && (
+				<BubbleChart
+					colors={colors}
+					colorNames={colorNames}
+					factionStates={dynamicSnapshotsAll}
+				/>
+			)}
+
+			{visualizationMode === 'pie' && (
+				<PieChart
+					colors={colors}
+					colorNames={colorNames}
+					factionStates={dynamicSnapshotsAll}
+				/>
+			)}
+
+			{/* Summary - total players across all colors (only for pulse and network modes) */}
+			{(visualizationMode === 'pulse' || visualizationMode === 'network') && (
+				<div className="rounded-2xl border border-slate-600/50 bg-slate-700/50 px-6 py-4 text-center backdrop-blur-sm lg:px-8 lg:py-6">
+					<p className="text-3xl font-bold text-white lg:text-4xl">
+						{colors.reduce((sum, color) => {
+							const players = Object.keys(
+								dynamicSnapshotsAll[color]?.players || {}
+							);
+							return sum + players.length;
+						}, 0)}
+					</p>
+					<p className="text-base text-slate-300 lg:text-lg">
+						{config.totalConnectedLabel}
+					</p>
+				</div>
+			)}
 		</div>
 	);
 };
@@ -231,7 +282,8 @@ export const ColorPresenterView: React.FC = () => {
 		roundActive,
 		roundDurationSeconds,
 		roundResults,
-		numberOfColors
+		numberOfColors,
+		presenterVisualizationMode
 	} = useSnapshot(globalStore.proxy);
 
 	const COLORS = generateColorArray(numberOfColors);
@@ -247,6 +299,7 @@ export const ColorPresenterView: React.FC = () => {
 			roundActive={roundActive}
 			roundDurationSeconds={roundDurationSeconds}
 			roundResults={roundResults}
+			visualizationMode={presenterVisualizationMode}
 		/>
 	);
 };

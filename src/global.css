@@ -1,5 +1,5 @@
 /* Font imports */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 
 /* Imports */
 @import 'tailwindcss';
@@ -8,14 +8,20 @@
 @plugin '@tailwindcss/typography';
 
 @theme {
-	/* Add theme styling here */
+	/* Typography */
 	--km-font-sans:
-		'Noto Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+		'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
 		'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 	--font-serif: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
 	--font-mono:
 		ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
 		'Courier New', monospace;
+
+	/* Modern shadows */
+	--shadow-card:
+		0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.08);
+	--shadow-card-hover:
+		0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
 /* Markdown styling with Tailwind Typography (prose) */
@@ -34,32 +40,87 @@
 
 html,
 body {
-	@apply overscroll-none text-slate-900;
+	@apply overscroll-none text-slate-900 antialiased;
 }
 
+/* Modern input styling */
 .km-input {
-	@apply w-full max-w-96 rounded-xl border border-slate-300 bg-slate-50 px-5 py-3 transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50;
+	@apply w-full max-w-96 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 shadow-sm transition-all duration-200 placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 focus:outline-none disabled:opacity-50;
 }
 
+/* Modern button base */
 .km-btn-primary,
 .km-btn-secondary,
 .km-btn-error,
 .km-btn-neutral {
-	@apply inline-flex items-center justify-center gap-3 rounded-xl px-5 py-3 font-medium transition-colors not-disabled:cursor-pointer disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:opacity-50;
+	@apply inline-flex items-center justify-center gap-2.5 rounded-2xl px-6 py-3.5 font-semibold shadow-sm transition-all duration-200 not-disabled:cursor-pointer not-disabled:active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 disabled:shadow-none;
 }
 
 .km-btn-primary {
-	@apply not-disabled:bg-blue-500 not-disabled:text-white not-disabled:hover:bg-blue-600;
+	@apply not-disabled:bg-gradient-to-b not-disabled:from-blue-500 not-disabled:to-blue-600 not-disabled:text-white not-disabled:shadow-blue-500/25 not-disabled:hover:from-blue-600 not-disabled:hover:to-blue-700 not-disabled:hover:shadow-md not-disabled:hover:shadow-blue-500/30;
 }
 
 .km-btn-secondary {
-	@apply not-disabled:bg-blue-100 not-disabled:text-blue-950 not-disabled:hover:bg-blue-200;
+	@apply not-disabled:border not-disabled:border-slate-200 not-disabled:bg-white not-disabled:text-slate-700 not-disabled:hover:border-slate-300 not-disabled:hover:bg-slate-50 not-disabled:hover:shadow-md;
 }
 
 .km-btn-error {
-	@apply not-disabled:bg-red-500 not-disabled:text-white not-disabled:hover:bg-red-600;
+	@apply not-disabled:bg-gradient-to-b not-disabled:from-red-500 not-disabled:to-red-600 not-disabled:text-white not-disabled:shadow-red-500/25 not-disabled:hover:from-red-600 not-disabled:hover:to-red-700 not-disabled:hover:shadow-md not-disabled:hover:shadow-red-500/30;
 }
 
 .km-btn-neutral {
-	@apply not-disabled:bg-slate-600 not-disabled:text-white not-disabled:hover:bg-slate-700;
+	@apply not-disabled:bg-gradient-to-b not-disabled:from-slate-600 not-disabled:to-slate-700 not-disabled:text-white not-disabled:shadow-slate-500/25 not-disabled:hover:from-slate-700 not-disabled:hover:to-slate-800 not-disabled:hover:shadow-md;
+}
+
+/* Modern card styling */
+.km-card {
+	@apply shadow-card rounded-2xl border border-slate-100 bg-white p-5 transition-shadow duration-200;
+}
+
+/* Glass morphism effect */
+.km-glass {
+	@apply rounded-2xl border border-white/20 bg-white/80 backdrop-blur-md;
+}
+
+.km-glass-dark {
+	@apply rounded-2xl border border-white/10 bg-slate-900/80 backdrop-blur-md;
+}
+
+/* Loading spinner */
+.km-spinner {
+	@apply inline-block size-5 animate-spin rounded-full border-2 border-current border-t-transparent;
+}
+
+/* Soft pulse for waiting states */
+@keyframes soft-pulse {
+	0%,
+	100% {
+		opacity: 0.6;
+	}
+	50% {
+		opacity: 1;
+	}
+}
+
+.km-soft-pulse {
+	animation: soft-pulse 2s ease-in-out infinite;
+}
+
+/* Success animation */
+@keyframes success-pop {
+	0% {
+		transform: scale(0.9);
+		opacity: 0;
+	}
+	70% {
+		transform: scale(1.02);
+	}
+	100% {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+.km-success-pop {
+	animation: success-pop 0.25s ease-out forwards;
 }

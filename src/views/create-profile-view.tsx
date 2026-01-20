@@ -54,7 +54,7 @@ export const CreateProfileView: React.FC<Props> = () => {
 				>
 					{isLoading ? (
 						<>
-							<span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-white"></span>
+							<span className="km-spinner" />
 							{config.loading}
 						</>
 					) : (

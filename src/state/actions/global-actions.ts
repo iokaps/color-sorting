@@ -1,5 +1,9 @@
 import { kmClient } from '@/services/km-client';
-import { globalStore, type ColorName } from '../stores/global-store';
+import {
+	globalStore,
+	type ColorName,
+	type PresenterVisualizationMode
+} from '../stores/global-store';
 
 export const globalActions = {
 	async startGame() {
@@ -55,6 +59,12 @@ export const globalActions = {
 	async updateWinBonus(bonusPoints: number) {
 		await kmClient.transact([globalStore], ([globalState]) => {
 			globalState.winBonus = Math.max(1, bonusPoints);
+		});
+	},
+
+	async setPresenterVisualizationMode(mode: PresenterVisualizationMode) {
+		await kmClient.transact([globalStore], ([globalState]) => {
+			globalState.presenterVisualizationMode = mode;
 		});
 	}
 };

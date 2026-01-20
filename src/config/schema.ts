@@ -109,7 +109,15 @@ export const schema = z.object({
 	cumulativeLeaderboardLabel: z.string().default('Cumulative Scores'),
 	factionSizeLabel: z.string().default('Players Connected'),
 	almostTimeMd: z.string().default('Almost time!'),
-	totalConnectedLabel: z.string().default('Total connected')
+	totalConnectedLabel: z.string().default('Total connected'),
+
+	// Presenter visualization modes
+	visualizationModeLabel: z.string().default('Presenter Visualization'),
+	visualizationPulseLabel: z.string().default('Pulse Rings'),
+	visualizationNetworkLabel: z.string().default('Network Graph'),
+	visualizationBarsLabel: z.string().default('Racing Bars'),
+	visualizationBubblesLabel: z.string().default('Bubbles'),
+	visualizationPieLabel: z.string().default('Pie Chart')
 });
 
 export type Config = z.infer<typeof schema>;

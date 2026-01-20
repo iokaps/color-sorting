@@ -130,3 +130,11 @@ cumulativeLeaderboardLabel: 'Cumulative Scores'
 factionSizeLabel: 'Players Connected'
 almostTimeMd: 'Almost time!'
 totalConnectedLabel: 'Total connected'
+
+# Presenter visualization modes
+visualizationModeLabel: 'Presenter Visualization'
+visualizationPulseLabel: 'Pulse Rings'
+visualizationNetworkLabel: 'Network Graph'
+visualizationBarsLabel: 'Racing Bars'
+visualizationBubblesLabel: 'Bubbles'
+visualizationPieLabel: 'Pie Chart'
