@@ -1,23 +1,17 @@
 import { kmClient } from '@/services/km-client';
 import type { KokimokiStore } from '@kokimoki/app';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 
 interface StoreEntry {
 	store: KokimokiStore<object>;
-	refCount: number;
+	joinPromise: Promise<void> | null;
 	joined: boolean;
-	cleanupTimeout?: ReturnType<typeof setTimeout>;
+	listeners: Set<() => void>;
 }
 
-const kokimokiStores = new Map<string, StoreEntry>();
-
-// Track mounted components to prevent state updates after unmount
-const mountedComponents = new Set<string>();
-
-interface ConnectionState {
-	connected: boolean;
-	connecting: boolean;
-}
+// Global store cache - stores persist for the entire app lifecycle
+// This prevents EventEmitter memory leaks from repeated join/leave cycles
+const storeCache = new Map<string, StoreEntry>();
 
 export interface UseDynamicStoreResult<T extends object> {
 	store: KokimokiStore<T>;
@@ -25,8 +19,27 @@ export interface UseDynamicStoreResult<T extends object> {
 	isConnecting: boolean;
 }
 
+function getOrCreateEntry<T extends object>(
+	roomName: string,
+	initialState: T
+): StoreEntry {
+	let entry = storeCache.get(roomName);
+	if (!entry) {
+		const store = kmClient.store<T>(roomName, initialState, false);
+		entry = { store, joinPromise: null, joined: false, listeners: new Set() };
+		storeCache.set(roomName, entry);
+	}
+	return entry;
+}
+
+function notifyListeners(entry: StoreEntry) {
+	entry.listeners.forEach((listener) => listener());
+}
+
 /**
- * Hook to manage dynamic Kokimoki stores with connection state
+ * Hook to manage dynamic Kokimoki stores with connection state.
+ * Stores are created once and persist for the app lifetime to prevent memory leaks.
+ *
  * @param roomName - The unique name of the Kokimoki store (room)
  * @param initialState - The initial state for the Kokimoki store
  * @returns An object containing the Kokimoki store and connection states
@@ -35,124 +48,69 @@ export function useDynamicStore<T extends object>(
 	roomName: string,
 	initialState: T
 ): UseDynamicStoreResult<T> {
-	const [connection, setConnection] = useState<ConnectionState>({
-		connected: false,
-		connecting: false
-	});
-
-	// Initialize or get cached store
-	if (!kokimokiStores.has(roomName)) {
-		const store = kmClient.store<T>(roomName, initialState, false);
-		kokimokiStores.set(roomName, { store, refCount: 0, joined: false });
-	}
-
-	const entry = kokimokiStores.get(roomName)!;
+	const entry = getOrCreateEntry(roomName, initialState);
 	const store = entry.store as KokimokiStore<T>;
 
-	// Generate a unique ID for this hook instance to track mounting
-	const instanceIdRef = useRef<string>('');
-	if (!instanceIdRef.current) {
-		instanceIdRef.current = `${roomName}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-	}
-	const instanceId = instanceIdRef.current;
+	// Use useSyncExternalStore to subscribe to connection state changes
+	const isConnected = useSyncExternalStore(
+		(onStoreChange) => {
+			entry.listeners.add(onStoreChange);
+			return () => {
+				entry.listeners.delete(onStoreChange);
+			};
+		},
+		() => entry.joined,
+		() => entry.joined
+	);
 
+	const isConnecting = useSyncExternalStore(
+		(onStoreChange) => {
+			entry.listeners.add(onStoreChange);
+			return () => {
+				entry.listeners.delete(onStoreChange);
+			};
+		},
+		() => entry.joinPromise !== null && !entry.joined,
+		() => entry.joinPromise !== null && !entry.joined
+	);
+
+	// Join store on mount (only once per store)
 	useEffect(() => {
-		// Mark this instance as mounted
-		mountedComponents.add(instanceId);
+		const currentEntry = storeCache.get(roomName);
+		if (!currentEntry) return;
 
-		// Cancel any pending cleanup (handles React Strict Mode double-mounting)
-		if (entry.cleanupTimeout) {
-			clearTimeout(entry.cleanupTimeout);
-			entry.cleanupTimeout = undefined;
+		// If already joined or joining, nothing to do
+		if (currentEntry.joined || currentEntry.joinPromise) {
+			return;
 		}
 
-		// Increment reference count
-		entry.refCount += 1;
-
-		// Join store if not already joined
-		if (!entry.joined) {
-			entry.joined = true;
-			setConnection({
-				connecting: true,
-				connected: false
+		// Start joining
+		const joinPromise = kmClient
+			.join(currentEntry.store)
+			.then(() => {
+				currentEntry.joined = true;
+				currentEntry.joinPromise = null;
+				notifyListeners(currentEntry);
+			})
+			.catch((error) => {
+				console.error(
+					`[useDynamicStore] Failed to join store ${roomName}:`,
+					error
+				);
+				currentEntry.joinPromise = null;
+				notifyListeners(currentEntry);
 			});
 
-			kmClient
-				.join(entry.store)
-				.then(() => {
-					// Only update state if this specific component instance is still mounted
-					if (mountedComponents.has(instanceId)) {
-						setConnection({
-							connecting: false,
-							connected: true
-						});
-					}
-				})
-				.catch((error) => {
-					console.error(
-						`[useDynamicStore] Failed to join store ${roomName}:`,
-						error
-					);
-					if (mountedComponents.has(instanceId)) {
-						setConnection({
-							connecting: false,
-							connected: false
-						});
-					}
-					entry.joined = false;
-				});
-		} else {
-			// Already joined by another instance
-			setConnection({
-				connecting: false,
-				connected: true
-			});
-		}
+		currentEntry.joinPromise = joinPromise;
+		notifyListeners(currentEntry);
 
-		// Cleanup on unmount
-		return () => {
-			// Mark this instance as unmounted
-			mountedComponents.delete(instanceId);
-
-			const cleanupEntry = kokimokiStores.get(roomName);
-			if (!cleanupEntry) return;
-
-			// Decrement reference count
-			cleanupEntry.refCount -= 1;
-
-			// Schedule cleanup with debounce to handle React Strict Mode
-			if (cleanupEntry.refCount <= 0) {
-				cleanupEntry.cleanupTimeout = setTimeout(async () => {
-					// Double-check refCount in case component remounted during timeout
-					if (cleanupEntry.refCount > 0) return;
-
-					// Leave store if joined
-					if (cleanupEntry.joined) {
-						cleanupEntry.joined = false;
-						try {
-							await kmClient.leave(cleanupEntry.store);
-						} catch (error) {
-							// Suppress expected "Room not joined" errors
-							if (
-								error instanceof Error &&
-								!error.message?.includes('Room not joined')
-							) {
-								console.error(`Failed to leave store ${roomName}:`, error);
-							}
-						}
-					}
-
-					// Remove from cache to prevent stale store references
-					kokimokiStores.delete(roomName);
-				}, 250);
-			}
-		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [roomName, instanceId]);
+		// NO CLEANUP - stores persist for app lifetime to prevent memory leaks
+		// The SDK adds event listeners on join that aren't properly cleaned up on leave
+	}, [roomName]);
 
 	return {
 		store,
-		isConnected: connection.connected,
-		isConnecting: connection.connecting
+		isConnected,
+		isConnecting
 	};
 }
