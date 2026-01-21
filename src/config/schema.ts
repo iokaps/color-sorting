@@ -117,7 +117,21 @@ export const schema = z.object({
 	visualizationNetworkLabel: z.string().default('Network Graph'),
 	visualizationBarsLabel: z.string().default('Racing Bars'),
 	visualizationBubblesLabel: z.string().default('Bubbles'),
-	visualizationPieLabel: z.string().default('Pie Chart')
+	visualizationPieLabel: z.string().default('Pie Chart'),
+
+	// Component labels
+	noPlayersLabel: z.string().default('No players'),
+	connectedLabel: z.string().default('connected'),
+	playersLabel: z.string().default('players'),
+	linksLabel: z.string().default('links'),
+	totalLabel: z.string().default('total'),
+	clusterLabel: z.string().default('cluster'),
+	clustersLabel: z.string().default('clusters'),
+	isolatedLabel: z.string().default('isolated'),
+	totalConnectedLabel2: z.string().default('total connected'),
+	noPlayersInFactionLabel: z.string().default('No players in {color} faction'),
+	connectedTooltipLabel: z.string().default('Connected'),
+	notConnectedTooltipLabel: z.string().default('Not connected')
 });
 
 export type Config = z.infer<typeof schema>;

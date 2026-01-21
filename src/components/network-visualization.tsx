@@ -1,3 +1,4 @@
+import { config } from '@/config';
 import type { ColorFactionState } from '@/state/stores/color-store';
 import type { ColorName } from '@/state/stores/global-store';
 import { cn } from '@/utils/cn';
@@ -80,11 +81,11 @@ export const NetworkVisualization: React.FC<NetworkVisualizationProps> = ({
 						borderColor: `${colorHex}40`
 					}}
 				>
-					<p className="text-sm text-slate-500">No players</p>
+					<p className="text-sm text-slate-500">{config.noPlayersLabel}</p>
 				</div>
 				<div className="text-center">
 					<p className="text-base font-semibold text-white">{colorName}</p>
-					<p className="text-sm text-slate-400">0 connected</p>
+					<p className="text-sm text-slate-400">0 {config.connectedLabel}</p>
 				</div>
 			</div>
 		);
@@ -182,7 +183,7 @@ export const NetworkVisualization: React.FC<NetworkVisualizationProps> = ({
 			<div className="text-center">
 				<p className="text-base font-semibold text-white">{colorName}</p>
 				<p className="text-sm text-slate-400">
-					{playerCount} players · {edgeCount} links
+					{playerCount} {config.playersLabel} · {edgeCount} {config.linksLabel}
 				</p>
 			</div>
 		</div>

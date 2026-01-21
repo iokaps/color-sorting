@@ -1,3 +1,4 @@
+import { config } from '@/config';
 import type { ColorFactionState } from '@/state/stores/color-store';
 import type { ColorName } from '@/state/stores/global-store';
 import { getColorHex } from '@/utils/color-utils';
@@ -98,7 +99,9 @@ export const ConnectionHeatmap: React.FC<ConnectionHeatmapProps> = ({
 	if (!factionState || mostConnected.length === 0) {
 		return (
 			<div className="rounded-2xl border border-slate-600/50 bg-slate-700/50 px-6 py-4 text-center backdrop-blur-sm">
-				<p className="text-slate-300">No players in {colorName} faction</p>
+				<p className="text-slate-300">
+					{config.noPlayersInFactionLabel.replace('{color}', colorName)}
+				</p>
 			</div>
 		);
 	}
@@ -172,8 +175,8 @@ export const ConnectionHeatmap: React.FC<ConnectionHeatmapProps> = ({
 										{isSelf
 											? `${playerA.slice(0, 4)}...`
 											: isConnected
-												? 'Connected'
-												: 'Not connected'}
+												? config.connectedTooltipLabel
+												: config.notConnectedTooltipLabel}
 									</div>
 								</div>
 							);

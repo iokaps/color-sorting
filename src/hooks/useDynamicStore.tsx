@@ -1,6 +1,6 @@
 import { kmClient } from '@/services/km-client';
 import type { KokimokiStore } from '@kokimoki/app';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface StoreEntry {
 	store: KokimokiStore<object>;
@@ -10,6 +10,9 @@ interface StoreEntry {
 }
 
 const kokimokiStores = new Map<string, StoreEntry>();
+
+// Track mounted components to prevent state updates after unmount
+const mountedComponents = new Set<string>();
 
 interface ConnectionState {
 	connected: boolean;
@@ -46,7 +49,17 @@ export function useDynamicStore<T extends object>(
 	const entry = kokimokiStores.get(roomName)!;
 	const store = entry.store as KokimokiStore<T>;
 
+	// Generate a unique ID for this hook instance to track mounting
+	const instanceIdRef = useRef<string>('');
+	if (!instanceIdRef.current) {
+		instanceIdRef.current = `${roomName}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+	}
+	const instanceId = instanceIdRef.current;
+
 	useEffect(() => {
+		// Mark this instance as mounted
+		mountedComponents.add(instanceId);
+
 		// Cancel any pending cleanup (handles React Strict Mode double-mounting)
 		if (entry.cleanupTimeout) {
 			clearTimeout(entry.cleanupTimeout);
@@ -67,8 +80,8 @@ export function useDynamicStore<T extends object>(
 			kmClient
 				.join(entry.store)
 				.then(() => {
-					// Only update state if component is still mounted
-					if (entry.refCount > 0) {
+					// Only update state if this specific component instance is still mounted
+					if (mountedComponents.has(instanceId)) {
 						setConnection({
 							connecting: false,
 							connected: true
@@ -80,10 +93,12 @@ export function useDynamicStore<T extends object>(
 						`[useDynamicStore] Failed to join store ${roomName}:`,
 						error
 					);
-					setConnection({
-						connecting: false,
-						connected: false
-					});
+					if (mountedComponents.has(instanceId)) {
+						setConnection({
+							connecting: false,
+							connected: false
+						});
+					}
 					entry.joined = false;
 				});
 		} else {
@@ -96,6 +111,9 @@ export function useDynamicStore<T extends object>(
 
 		// Cleanup on unmount
 		return () => {
+			// Mark this instance as unmounted
+			mountedComponents.delete(instanceId);
+
 			const cleanupEntry = kokimokiStores.get(roomName);
 			if (!cleanupEntry) return;
 
@@ -124,18 +142,13 @@ export function useDynamicStore<T extends object>(
 						}
 					}
 
-					// Remove from cache
+					// Remove from cache to prevent stale store references
 					kokimokiStores.delete(roomName);
 				}, 250);
 			}
-
-			setConnection({
-				connecting: false,
-				connected: false
-			});
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [roomName]);
+	}, [roomName, instanceId]);
 
 	return {
 		store,

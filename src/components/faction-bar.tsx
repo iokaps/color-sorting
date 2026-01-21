@@ -1,3 +1,4 @@
+import { config } from '@/config';
 import { cn } from '@/utils/cn';
 import * as React from 'react';
 
@@ -22,10 +23,10 @@ export const FactionBar: React.FC<FactionBarProps> = ({
 			<div className="flex w-full items-center gap-4">
 				<div className="w-32 text-sm font-semibold text-white">{colorName}</div>
 				<div className="flex-1 rounded-lg bg-slate-700/50 px-4 py-3 text-center text-sm text-slate-400">
-					No players
+					{config.noPlayersLabel}
 				</div>
 				<div className="w-20 text-right text-sm font-semibold text-slate-400">
-					0 total
+					0 {config.totalLabel}
 				</div>
 			</div>
 		);
@@ -100,13 +101,15 @@ export const FactionBar: React.FC<FactionBarProps> = ({
 							<div className="flex items-center gap-1 px-2 text-xs font-semibold text-slate-300">
 								{remainingClusters.length > 2 && (
 									<span>
-										+{remainingClusters.length - 2} cluster
-										{remainingClusters.length - 2 > 1 ? 's' : ''}
+										+{remainingClusters.length - 2}{' '}
+										{remainingClusters.length - 2 > 1
+											? config.clustersLabel
+											: config.clusterLabel}
 									</span>
 								)}
 								{isolatedCount > 0 && (
 									<span className="text-slate-400">
-										({isolatedCount} isolated)
+										({isolatedCount} {config.isolatedLabel})
 									</span>
 								)}
 							</div>
@@ -115,7 +118,7 @@ export const FactionBar: React.FC<FactionBarProps> = ({
 						{/* Show individual isolated if only a few remaining */}
 						{remainingClusters.length === 2 && isolatedCount > 0 && (
 							<span className="text-xs text-slate-400">
-								({isolatedCount} isolated)
+								({isolatedCount} {config.isolatedLabel})
 							</span>
 						)}
 					</div>
@@ -125,7 +128,9 @@ export const FactionBar: React.FC<FactionBarProps> = ({
 			{/* Stats */}
 			<div className="w-32 text-right">
 				<div className="text-sm font-bold text-white">{totalPlayers}</div>
-				<div className="text-xs text-slate-400">total connected</div>
+				<div className="text-xs text-slate-400">
+					{config.totalConnectedLabel2}
+				</div>
 			</div>
 		</div>
 	);
