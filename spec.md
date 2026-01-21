@@ -39,10 +39,10 @@ Color Sorting is a real-time network game where players are randomly assigned on
 ### Faction Groups
 
 - A faction is a **connected graph** of players who share the same color and have directly or indirectly scanned each other
-- Factions are tracked via **dynamic Kokimoki stores** (one store per color)
-- Each store maintains:
-  - `players`: Record of all players in the faction with join timestamps
-  - `edges`: Record of direct connections (edges) between players
+- Factions are tracked via a **unified Kokimoki store** (`factionsStore`) containing all color faction data
+- The store maintains color-keyed records for:
+  - `players[color]`: Record of all players in that color faction with join timestamps
+  - `edges[color]`: Record of direct connections (edges) between players
 - **Graph connectivity**: Player A is in the same faction as Player C if a path of edges connects them (transitive closure)
 - **Largest faction calculation**: Performed using iterative depth-first search (DFS) to find connected components
 - **Faction scoring**:
@@ -253,6 +253,19 @@ interface ColorFactionState {
 }
 ```
 
+**Note**: As of the latest architecture update, color factions are now stored in a **unified `factionsStore`** rather than separate stores per color. This reduces the number of Kokimoki store joins from N (where N is number of colors) to 1, avoiding EventEmitter listener limits. The state structure per color remains the same:
+
+```typescript
+interface FactionsState {
+  colors: Record<colorName, ColorFactionData>; // All faction data keyed by color
+}
+
+interface ColorFactionData {
+  players: Record<clientId, { joinedAt: number }>; // All players in this faction
+  edges: Record<edgeKey, connectionTime>; // Direct connections: "id1:id2" -> timestamp
+}
+```
+
 **Connection tracking**:
 
 - Each scan creates an edge: `edge_key = "${playerId1}:${playerId2}"`
@@ -273,11 +286,11 @@ interface ColorFactionState {
    - Extract playerCode and color from URL
    - Verify color matches Player A's assigned color
    - Prevent self-scans and duplicate connections
-3. **Create Connection**: Call `joinColorFaction(colorStore, scannedClientId)` with retry logic
+3. **Create Connection**: Call `factionActions.connectPlayers(color, playerAId, playerBId)` with retry logic
 4. **Retry Logic**:
    - 3 attempts with exponential backoff (300ms, 600ms, 900ms)
    - Handles "Room not joined" errors during store initialization
-5. **Update Faction**: Add edge to color store's dynamic Kokimoki store
+5. **Update Faction**: Add edge to unified `factionsStore` for the color
 6. **Feedback**: Show success/error message to user
 7. **Reactive Update**: Group count updates automatically via `useSnapshot`
 

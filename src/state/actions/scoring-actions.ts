@@ -3,15 +3,17 @@ import {
 	buildAdjacencyList,
 	findAllConnectedComponents
 } from '@/utils/graph-utils';
-import type { KokimokiStore } from '@kokimoki/app';
-import type { ColorFactionState } from '../stores/color-store';
-import { parseEdgeKey } from '../stores/color-store';
+import {
+	factionsStore,
+	getFactionData,
+	parseEdgeKey,
+	type ColorFactionData
+} from '../stores/factions-store';
 import {
 	globalStore,
 	type ColorName,
 	type PlayerRoundScore
 } from '../stores/global-store';
-import { colorActions } from './color-actions';
 
 export const scoringActions = {
 	/**
@@ -19,15 +21,14 @@ export const scoringActions = {
 	 * Returns: clientId -> connection points (1 per edge)
 	 */
 	calculatePlayerConnectionPoints(
-		store: KokimokiStore<ColorFactionState>
+		factionData: ColorFactionData
 	): Record<string, number> {
-		const state = store.proxy;
 		const connectionPoints: Record<string, number> = {};
 
-		if (!state?.edges) return connectionPoints;
+		if (!factionData?.edges) return connectionPoints;
 
 		// Count edges per player (1 point per edge)
-		for (const edgeKey of Object.keys(state.edges)) {
+		for (const edgeKey of Object.keys(factionData.edges)) {
 			const [playerA, playerB] = parseEdgeKey(edgeKey);
 			connectionPoints[playerA] = (connectionPoints[playerA] || 0) + 1;
 			connectionPoints[playerB] = (connectionPoints[playerB] || 0) + 1;
@@ -39,15 +40,12 @@ export const scoringActions = {
 	/**
 	 * Get all players in largest connected component (winning faction)
 	 */
-	getWinningFactionPlayers(
-		store: KokimokiStore<ColorFactionState>
-	): Set<string> {
-		const state = store.proxy;
-		if (!state?.edges || !state?.players) return new Set();
+	getWinningFactionPlayers(factionData: ColorFactionData): Set<string> {
+		if (!factionData?.edges || !factionData?.players) return new Set();
 
-		const edgeKeys = Object.keys(state.edges);
+		const edgeKeys = Object.keys(factionData.edges);
 		const adjacencyList = buildAdjacencyList(edgeKeys, parseEdgeKey);
-		const allPlayerIds = new Set(Object.keys(state.players));
+		const allPlayerIds = new Set(Object.keys(factionData.players));
 
 		// Find all components and return the largest
 		const components = findAllConnectedComponents(allPlayerIds, adjacencyList);
@@ -59,16 +57,35 @@ export const scoringActions = {
 	},
 
 	/**
+	 * Calculate the largest connected component size for a faction
+	 */
+	calculateLargestFaction(factionData: ColorFactionData): number {
+		if (!factionData?.edges || !factionData?.players) return 0;
+
+		const edgeKeys = Object.keys(factionData.edges);
+		if (edgeKeys.length === 0) {
+			// No connections - each player is a component of size 1
+			return Object.keys(factionData.players).length > 0 ? 1 : 0;
+		}
+
+		const adjacencyList = buildAdjacencyList(edgeKeys, parseEdgeKey);
+		const allPlayerIds = new Set(Object.keys(factionData.players));
+		const components = findAllConnectedComponents(allPlayerIds, adjacencyList);
+
+		if (components.length === 0) return 0;
+
+		return Math.max(...components.map((c) => c.size));
+	},
+
+	/**
 	 * Calculate and save round results to global state
 	 * @param colors Array of colors in play this round
-	 * @param colorStoresCache Map of color to faction store
 	 */
-	async calculateAndSaveRoundResults(
-		colors: ColorName[],
-		colorStoresCache: Map<ColorName, KokimokiStore<ColorFactionState>>
-	): Promise<void> {
-		// Wait for all stores to sync their data before calculating results
+	async calculateAndSaveRoundResults(colors: ColorName[]): Promise<void> {
+		// Wait for store to sync data before calculating results
 		await new Promise((resolve) => setTimeout(resolve, 250));
+
+		const factionsSnapshot = factionsStore.proxy;
 
 		// Initialize results with all colors
 		const results: Record<ColorName, number> = {};
@@ -77,13 +94,11 @@ export const scoringActions = {
 		});
 
 		try {
-			// Calculate all faction sizes from currently accessible stores
+			// Calculate all faction sizes from unified store
 			for (const color of colors) {
-				const store = colorStoresCache.get(color);
-				if (store) {
-					const factionSize = colorActions.calculateLargestFaction(store);
-					results[color] = factionSize;
-				}
+				const factionData = getFactionData(factionsSnapshot, color);
+				const factionSize = scoringActions.calculateLargestFaction(factionData);
+				results[color] = factionSize;
 			}
 		} catch (error) {
 			console.error('Error calculating round results:', error);
@@ -104,16 +119,15 @@ export const scoringActions = {
 		const playerScoresThisRound: Record<string, PlayerRoundScore> = {};
 
 		for (const color of colors) {
-			const colorStore = colorStoresCache.get(color);
-			if (!colorStore) continue;
+			const factionData = getFactionData(factionsSnapshot, color);
 
 			// Get connection points for each player in this color
 			const connectionPoints =
-				scoringActions.calculatePlayerConnectionPoints(colorStore);
+				scoringActions.calculatePlayerConnectionPoints(factionData);
 
 			// Get players in winning faction
 			const winningPlayers =
-				scoringActions.getWinningFactionPlayers(colorStore);
+				scoringActions.getWinningFactionPlayers(factionData);
 
 			// Score each player in this color
 			for (const [playerId, points] of Object.entries(connectionPoints)) {

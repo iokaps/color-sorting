@@ -4,8 +4,12 @@ import { NetworkVisualization } from '@/components/network-visualization';
 import { PieChart } from '@/components/pie-chart';
 import { RacingBars } from '@/components/racing-bars';
 import { config } from '@/config';
-import { useColorStores } from '@/hooks/useColorStores';
 import { useServerTimer } from '@/hooks/useServerTime';
+import {
+	factionsStore,
+	getFactionData,
+	type ColorFactionData
+} from '@/state/stores/factions-store';
 import {
 	globalStore,
 	type ColorName,
@@ -50,8 +54,17 @@ const ColorPresenterInner: React.FC<ColorPresenterInnerProps> = ({
 	const roundDurationMs = (roundDurationSeconds || 90) * 1000;
 	const remainingMs = Math.max(0, roundDurationMs - elapsedMs);
 
-	// Use consolidated hook for all color stores
-	const dynamicSnapshotsAll = useColorStores();
+	// Get faction data from unified store (no dynamic stores needed)
+	const factionsSnapshot = useSnapshot(factionsStore.proxy);
+
+	// Create faction snapshots for each color
+	const dynamicSnapshotsAll = React.useMemo(() => {
+		const result: Record<ColorName, ColorFactionData> = {};
+		for (const color of colors) {
+			result[color] = getFactionData(factionsSnapshot, color);
+		}
+		return result;
+	}, [factionsSnapshot, colors]);
 
 	// Trigger confetti when round ends
 	React.useEffect(() => {

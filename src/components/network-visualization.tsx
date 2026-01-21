@@ -1,5 +1,5 @@
 import { config } from '@/config';
-import type { ColorFactionState } from '@/state/stores/color-store';
+import type { ColorFactionData } from '@/state/stores/factions-store';
 import type { ColorName } from '@/state/stores/global-store';
 import { cn } from '@/utils/cn';
 import { getColorHex } from '@/utils/color-utils';
@@ -8,7 +8,7 @@ import * as React from 'react';
 interface NetworkVisualizationProps {
 	color: ColorName;
 	colorName: string;
-	factionState: ColorFactionState | undefined;
+	factionState: ColorFactionData | undefined;
 }
 
 interface NodePosition {

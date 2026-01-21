@@ -1,37 +1,11 @@
 import { kmClient } from '@/services/km-client';
-import { colorActions } from '@/state/actions/color-actions';
+import { factionActions } from '@/state/actions/faction-actions';
 import { scoringActions } from '@/state/actions/scoring-actions';
-import type { ColorFactionState } from '@/state/stores/color-store';
 import { globalStore, type ColorName } from '@/state/stores/global-store';
 import { generateColorArray } from '@/utils/color-utils';
-import type { KokimokiStore } from '@kokimoki/app';
 import { useSnapshot } from '@kokimoki/app';
 import { useEffect, useRef } from 'react';
 import { useServerTimer } from './useServerTime';
-
-// Global cache for color stores - managed via useDynamicStore in other components
-const colorStoresCache = new Map<ColorName, KokimokiStore<ColorFactionState>>();
-
-/**
- * Register a color faction store in the global cache
- * Called by ColorSortingView and ColorPresenterView when they join stores
- */
-export function registerColorStore(
-	color: ColorName,
-	store: KokimokiStore<ColorFactionState>
-) {
-	colorStoresCache.set(color, store);
-}
-
-/**
- * Get the color stores cache for clearing during game reset
- */
-export function getColorStoresCache(): Map<
-	ColorName,
-	KokimokiStore<ColorFactionState>
-> {
-	return colorStoresCache;
-}
 
 /**
  * Hook to control and modify the global state
@@ -72,40 +46,21 @@ export function useGlobalController() {
 			.catch(() => {});
 	}, [connectionIds, controllerConnectionId, numberOfColors]);
 
-	// Clear color stores when a new round starts
+	// Clear factions when a new round starts
 	// IMPORTANT: Clear AFTER results are calculated (not immediately)
 	// This ensures calculation has access to all connection data
 	useEffect(() => {
 		if (!isGlobalController || roundStartTimestamp === 0) return;
 		if (roundStartTimestamp <= lastRoundStartRef.current) return;
 
-		// New round started - clear stores AFTER a longer delay
+		// New round started - clear factions AFTER a longer delay
 		// to ensure previous round's results calculation is complete
 		lastRoundStartRef.current = roundStartTimestamp;
 
 		const timeout = setTimeout(async () => {
 			try {
-				const localCOLORS = generateColorArray(numberOfColors);
-
-				// Clear all color stores - both cached and all 10 possible colors
-				// This ensures connections are reset even if some stores aren't in the cache
-				const allPossibleColors = generateColorArray(10); // all 10 possible colors
-				const storesToClear = [
-					...localCOLORS.map((c) => colorStoresCache.get(c)),
-					...allPossibleColors.map((c) => colorStoresCache.get(c))
-				].filter((store) => store !== undefined);
-
-				// Remove duplicates by store reference
-				const uniqueStores = Array.from(
-					new Map(storesToClear.map((s) => [s, s])).values()
-				);
-
-				// Clear each store's faction data
-				for (const store of uniqueStores) {
-					if (store) {
-						await colorActions.clearFaction(store);
-					}
-				}
+				// Clear all faction data in the unified store
+				await factionActions.clearAllFactions();
 			} catch {
 				// Silently ignore errors
 			}
@@ -132,7 +87,7 @@ export function useGlobalController() {
 
 				const localCOLORS = generateColorArray(numberOfColors);
 				scoringActions
-					.calculateAndSaveRoundResults(localCOLORS, colorStoresCache)
+					.calculateAndSaveRoundResults(localCOLORS)
 					.catch(console.error);
 			}
 		} else {

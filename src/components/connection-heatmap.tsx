@@ -1,5 +1,5 @@
 import { config } from '@/config';
-import type { ColorFactionState } from '@/state/stores/color-store';
+import type { ColorFactionData } from '@/state/stores/factions-store';
 import type { ColorName } from '@/state/stores/global-store';
 import { getColorHex } from '@/utils/color-utils';
 import * as React from 'react';
@@ -7,7 +7,7 @@ import * as React from 'react';
 interface ConnectionHeatmapProps {
 	color: ColorName;
 	colorName: string;
-	factionState: ColorFactionState | undefined;
+	factionState: ColorFactionData | undefined;
 }
 
 /**
@@ -57,7 +57,7 @@ function getConnectionCounts(
  * Falls back to first 8 by join time if no connections
  */
 function getMostConnectedPlayers(
-	factionState: ColorFactionState | undefined,
+	factionState: ColorFactionData | undefined,
 	maxPlayers = 8
 ): string[] {
 	if (!factionState) return [];

@@ -1,15 +1,18 @@
 import { QrScanner } from '@/components/qr-scanner';
 import { config } from '@/config';
-import { useDynamicStore } from '@/hooks/useDynamicStore';
-import { registerColorStore } from '@/hooks/useGlobalController';
 import { kmClient } from '@/services/km-client';
-import { colorActions } from '@/state/actions/color-actions';
+import { factionActions } from '@/state/actions/faction-actions';
 import {
-	createColorFactionState,
-	getColorStoreName
-} from '@/state/stores/color-store';
+	factionsStore,
+	getFactionData,
+	parseEdgeKey
+} from '@/state/stores/factions-store';
 import { globalStore, type ColorName } from '@/state/stores/global-store';
 import { getColorClass } from '@/utils/color-utils';
+import {
+	buildAdjacencyList,
+	findConnectedComponent
+} from '@/utils/graph-utils';
 import { useSnapshot } from '@kokimoki/app';
 import { KmQrCode } from '@kokimoki/shared';
 import { CheckCircle, Info, Scan, XCircle } from 'lucide-react';
@@ -29,85 +32,24 @@ const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
 		'success' | 'error' | 'info'
 	>('info');
 
-	// Get the dynamic store for this player's color
-	const { store: colorStore, isConnected } = useDynamicStore(
-		getColorStoreName(playerColor),
-		createColorFactionState()
-	);
+	// Get faction data from unified store (no dynamic store needed)
+	const factionsSnapshot = useSnapshot(factionsStore.proxy);
+	const factionData = getFactionData(factionsSnapshot, playerColor);
 
-	// Register store with global controller for access in useGlobalController hook
+	// Add this player to the faction on mount
 	React.useEffect(() => {
-		if (isConnected) {
-			registerColorStore(playerColor, colorStore);
-		}
-	}, [playerColor, colorStore, isConnected]);
+		factionActions.joinFaction(playerColor, kmClient.id).catch(console.error);
+	}, [playerColor]);
 
-	// Add this player to the faction when store connects
-	React.useEffect(() => {
-		if (!isConnected) return;
-
-		const addPlayerToFaction = async () => {
-			const maxRetries = 5;
-			let lastError: Error | null = null;
-
-			for (let attempt = 1; attempt <= maxRetries; attempt++) {
-				try {
-					await kmClient.transact([colorStore], ([state]) => {
-						// Ensure state objects exist
-						if (!state.players) state.players = {};
-						if (!state.edges) state.edges = {};
-
-						// Add this player to the faction if not already there
-						const now = kmClient.serverTimestamp();
-						if (!state.players[kmClient.id]) {
-							state.players[kmClient.id] = { joinedAt: now };
-						}
-					});
-					// Success - exit the retry loop
-					return;
-				} catch (error) {
-					lastError = error as Error;
-
-					// If it's a "Room not joined" error and we have retries left, wait and retry
-					if (
-						lastError?.message?.includes('Room not joined') &&
-						attempt < maxRetries
-					) {
-						const waitMs = 200 * attempt;
-						// Wait 200ms * attempt before retrying
-						await new Promise((resolve) => setTimeout(resolve, waitMs));
-						continue;
-					}
-
-					// For other errors or final attempt, just log and move on
-					console.error(
-						`Failed to add player to faction (attempt ${attempt}/${maxRetries}):`,
-						error
-					);
-					return;
-				}
-			}
-
-			// If we got here, all retries failed
-			if (lastError) {
-				console.error(
-					'Failed to add player to faction after all retries:',
-					lastError
-				);
-			}
-		};
-
-		addPlayerToFaction();
-	}, [isConnected, colorStore]);
-
-	// Get faction data for reactivity - when edges or players change, playerCount updates
-	useSnapshot(colorStore.proxy);
-
-	// Calculate this player's specific faction size (the faction they're part of)
-	const playerCount = colorActions.getPlayerFactionSize(
-		colorStore,
-		kmClient.id
-	);
+	// Calculate this player's specific faction size using graph utilities
+	const playerCount = React.useMemo(() => {
+		const edges = factionData.edges;
+		const edgeKeys = Object.keys(edges);
+		if (edgeKeys.length === 0) return 1; // Just this player
+		const adjacencyList = buildAdjacencyList(edgeKeys, parseEdgeKey);
+		const component = findConnectedComponent(kmClient.id, adjacencyList);
+		return component.size > 0 ? component.size : 1;
+	}, [factionData.edges]);
 
 	// Get player's short code for simpler QR (6 chars vs full client ID)
 	const myShortCode = playerShortCodes[kmClient.id] || kmClient.id;
@@ -216,19 +158,25 @@ const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
 				return;
 			}
 
-			// Try to join the faction
-			const result = await colorActions.joinColorFaction(
-				colorStore,
-				scannedClientId
-			);
-
-			if (result.alreadyConnected) {
+			// Check if already connected
+			if (
+				factionActions.isConnected(playerColor, kmClient.id, scannedClientId)
+			) {
 				setFeedbackType('info');
 				setFeedback(config.alreadyConnectedMd);
-			} else {
-				setFeedbackType('success');
-				setFeedback(config.connectedSuccessMd);
+				setTimeout(() => setFeedback(null), 2000);
+				setShowScanner(false);
+				return;
 			}
+
+			// Connect the players
+			await factionActions.connectPlayers(
+				playerColor,
+				kmClient.id,
+				scannedClientId
+			);
+			setFeedbackType('success');
+			setFeedback(config.connectedSuccessMd);
 
 			// Clear feedback after 3 seconds
 			setTimeout(() => setFeedback(null), 3000);
@@ -240,15 +188,6 @@ const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
 
 		setShowScanner(false);
 	};
-
-	if (!isConnected) {
-		return (
-			<div className="flex h-full flex-col items-center justify-center gap-3">
-				<div className="km-spinner size-8 border-slate-400" />
-				<p className="text-lg font-medium text-slate-600">{config.loading}</p>
-			</div>
-		);
-	}
 
 	return (
 		<div className="flex h-full w-full flex-col items-center justify-center gap-2 overflow-y-auto px-2 py-2 sm:gap-4 sm:px-4 sm:py-4">
@@ -262,21 +201,19 @@ const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
 						{colorNames[playerColor]}
 					</p>
 				</div>
-				{isConnected && (
-					<div className="rounded-xl border border-blue-100 bg-gradient-to-b from-blue-50 to-blue-100/50 px-4 py-2 text-center shadow-sm sm:px-6 sm:py-3">
-						<p className="text-2xl font-bold text-blue-600 sm:text-3xl">
-							{playerCount}
-						</p>
-						<p className="text-[10px] font-medium text-blue-600/80 sm:text-xs">
-							{playerCount <= 1
-								? config.justYouLabel
-								: config.connectedWithCountMd.replace(
-										'{count}',
-										(playerCount - 1).toString()
-									)}
-						</p>
-					</div>
-				)}
+				<div className="rounded-xl border border-blue-100 bg-gradient-to-b from-blue-50 to-blue-100/50 px-4 py-2 text-center shadow-sm sm:px-6 sm:py-3">
+					<p className="text-2xl font-bold text-blue-600 sm:text-3xl">
+						{playerCount}
+					</p>
+					<p className="text-[10px] font-medium text-blue-600/80 sm:text-xs">
+						{playerCount <= 1
+							? config.justYouLabel
+							: config.connectedWithCountMd.replace(
+									'{count}',
+									(playerCount - 1).toString()
+								)}
+					</p>
+				</div>
 			</div>
 
 			{/* Instructions */}

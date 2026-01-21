@@ -1,4 +1,4 @@
-import type { ColorFactionState } from '@/state/stores/color-store';
+import type { ColorFactionData } from '@/state/stores/factions-store';
 import type { ColorName } from '@/state/stores/global-store';
 import { cn } from '@/utils/cn';
 import { getColorHex } from '@/utils/color-utils';
@@ -7,7 +7,7 @@ import * as React from 'react';
 interface RacingBarsProps {
 	colors: ColorName[];
 	colorNames: Record<ColorName, string>;
-	factionStates: Record<ColorName, ColorFactionState | undefined>;
+	factionStates: Record<ColorName, ColorFactionData | undefined>;
 }
 
 interface ColorData {

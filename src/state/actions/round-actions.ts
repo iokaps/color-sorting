@@ -1,10 +1,7 @@
-import { getColorStoresCache } from '@/hooks/useGlobalController';
 import { kmClient } from '@/services/km-client';
 import { generateColorArray } from '@/utils/color-utils';
-import type { KokimokiStore } from '@kokimoki/app';
-import type { ColorFactionState } from '../stores/color-store';
 import { globalStore, type ColorName } from '../stores/global-store';
-import { colorActions } from './color-actions';
+import { factionActions } from './faction-actions';
 
 /**
  * Fisher-Yates shuffle for unbiased randomization (O(n) time, O(1) extra space)
@@ -85,25 +82,9 @@ function assignColorsWithConstraints(
 }
 
 export const roundActions = {
-	async assignColorsAndStartRound(
-		colorStores?: Record<ColorName, KokimokiStore<ColorFactionState>>
-	) {
-		// Get numberOfColors first to determine COLORS
-		const numberOfColors = globalStore.proxy.numberOfColors || 4;
-		const COLORS = generateColorArray(numberOfColors);
-
-		// Clear all color faction stores from previous round
-		if (colorStores) {
-			await Promise.all(
-				COLORS.map((color) => {
-					const store = colorStores[color];
-					if (store) {
-						return colorActions.clearFaction(store);
-					}
-					return Promise.resolve();
-				})
-			);
-		}
+	async assignColorsAndStartRound() {
+		// Clear all faction data from previous round
+		await factionActions.clearAllFactions();
 
 		// Assign colors to players
 		await kmClient.transact([globalStore], ([globalState]) => {
@@ -159,24 +140,12 @@ export const roundActions = {
 	},
 
 	async resetGame() {
-		// Clear all color faction stores from the previous game
+		// Clear all faction data from the previous game
 		try {
-			const colorStoresCache = getColorStoresCache();
-			const COLORS = generateColorArray(10); // All possible colors
-
-			// Clear each color store
-			await Promise.all(
-				COLORS.map((color) => {
-					const store = colorStoresCache.get(color);
-					if (store) {
-						return colorActions.clearFaction(store);
-					}
-					return Promise.resolve();
-				})
-			);
+			await factionActions.clearAllFactions();
 		} catch (error) {
-			console.error('Error clearing color stores during reset:', error);
-			// Continue with game reset even if store clearing fails
+			console.error('Error clearing factions during reset:', error);
+			// Continue with game reset even if faction clearing fails
 		}
 
 		// Reset global state
@@ -194,10 +163,5 @@ export const roundActions = {
 			globalState.gameComplete = false;
 			globalState.started = false;
 		});
-
-		// Clear the color stores cache to force fresh joins on next game
-		// This helps clean up any lingering listeners/connections
-		const cache = getColorStoresCache();
-		cache.clear();
 	}
 };

@@ -1,10 +1,10 @@
 import { kmClient } from '@/services/km-client';
 import type { KokimokiStore } from '@kokimoki/app';
-import { useEffect, useSyncExternalStore } from 'react';
+import { useSyncExternalStore } from 'react';
 
 interface StoreEntry {
 	store: KokimokiStore<object>;
-	joinPromise: Promise<void> | null;
+	joining: boolean; // synchronous flag to prevent race conditions
 	joined: boolean;
 	listeners: Set<() => void>;
 }
@@ -12,6 +12,11 @@ interface StoreEntry {
 // Global store cache - stores persist for the entire app lifecycle
 // This prevents EventEmitter memory leaks from repeated join/leave cycles
 const storeCache = new Map<string, StoreEntry>();
+
+// In dev mode with multiple iframes (host, players, presenter), each frame has its own
+// module instance but shares the SDK's EventEmitter. This causes MaxListenersExceededWarning
+// when joining many stores. This is expected in dev mode and not a real memory leak.
+// In production, there's only one app instance so this doesn't occur.
 
 export interface UseDynamicStoreResult<T extends object> {
 	store: KokimokiStore<T>;
@@ -26,9 +31,33 @@ function getOrCreateEntry<T extends object>(
 	let entry = storeCache.get(roomName);
 	if (!entry) {
 		const store = kmClient.store<T>(roomName, initialState, false);
-		entry = { store, joinPromise: null, joined: false, listeners: new Set() };
+		entry = { store, joining: false, joined: false, listeners: new Set() };
 		storeCache.set(roomName, entry);
 	}
+
+	// Start joining immediately during store creation (synchronous check)
+	// This prevents race conditions from multiple components mounting simultaneously
+	if (!entry.joined && !entry.joining) {
+		entry.joining = true;
+		// Schedule the async join - this runs after render but the flag is already set
+		Promise.resolve().then(() => {
+			kmClient
+				.join(entry.store)
+				.then(() => {
+					entry.joined = true;
+					notifyListeners(entry);
+				})
+				.catch((error) => {
+					console.error(
+						`[useDynamicStore] Failed to join store ${roomName}:`,
+						error
+					);
+					entry.joining = false;
+					notifyListeners(entry);
+				});
+		});
+	}
+
 	return entry;
 }
 
@@ -70,43 +99,12 @@ export function useDynamicStore<T extends object>(
 				entry.listeners.delete(onStoreChange);
 			};
 		},
-		() => entry.joinPromise !== null && !entry.joined,
-		() => entry.joinPromise !== null && !entry.joined
+		() => entry.joining && !entry.joined,
+		() => entry.joining && !entry.joined
 	);
 
-	// Join store on mount (only once per store)
-	useEffect(() => {
-		const currentEntry = storeCache.get(roomName);
-		if (!currentEntry) return;
-
-		// If already joined or joining, nothing to do
-		if (currentEntry.joined || currentEntry.joinPromise) {
-			return;
-		}
-
-		// Start joining
-		const joinPromise = kmClient
-			.join(currentEntry.store)
-			.then(() => {
-				currentEntry.joined = true;
-				currentEntry.joinPromise = null;
-				notifyListeners(currentEntry);
-			})
-			.catch((error) => {
-				console.error(
-					`[useDynamicStore] Failed to join store ${roomName}:`,
-					error
-				);
-				currentEntry.joinPromise = null;
-				notifyListeners(currentEntry);
-			});
-
-		currentEntry.joinPromise = joinPromise;
-		notifyListeners(currentEntry);
-
-		// NO CLEANUP - stores persist for app lifetime to prevent memory leaks
-		// The SDK adds event listeners on join that aren't properly cleaned up on leave
-	}, [roomName]);
+	// Join is now initiated in getOrCreateEntry - no useEffect needed for joining
+	// This ensures the joining flag is set synchronously during render before any effects run
 
 	return {
 		store,
