@@ -1,4 +1,5 @@
 import { config } from '@/config';
+import { useButtonCooldown } from '@/hooks/useButtonCooldown';
 import { kmClient } from '@/services/km-client';
 import { roundActions } from '@/state/actions/round-actions';
 import { globalStore, type ColorName } from '@/state/stores/global-store';
@@ -19,7 +20,7 @@ export const ColorResultsView: React.FC = () => {
 		playerScores
 	} = useSnapshot(globalStore.proxy);
 	const isHost = kmClient.clientContext.mode === 'host';
-	const [buttonCooldown, setButtonCooldown] = React.useState(false);
+	const [isCoolingDown, startCooldown] = useButtonCooldown(1000);
 	const confetti = useKmConfettiContext();
 
 	// Get dynamic colors based on numberOfColors
@@ -35,28 +36,17 @@ export const ColorResultsView: React.FC = () => {
 	// Trigger confetti on mount (only once)
 	React.useEffect(() => {
 		if (confetti) {
-			// Use 'standard' preset for player results view
 			confetti.triggerConfetti({ preset: 'standard' });
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	// Button cooldown
-	React.useEffect(() => {
-		if (!buttonCooldown) return;
-		const timeout = setTimeout(() => {
-			setButtonCooldown(false);
-		}, 1000);
-		return () => clearTimeout(timeout);
-	}, [buttonCooldown]);
-
 	const handleNextRound = async () => {
-		setButtonCooldown(true);
+		startCooldown();
 		try {
 			await roundActions.nextRound();
 		} catch (error) {
 			console.error('Failed to start next round:', error);
-			setButtonCooldown(false);
 		}
 	};
 
@@ -91,12 +81,17 @@ export const ColorResultsView: React.FC = () => {
 					<div className="relative flex items-center justify-center gap-2">
 						<Trophy className="size-6 text-white drop-shadow sm:size-8" />
 						<p className="text-center text-xl font-bold text-white drop-shadow sm:text-3xl">
-							{winningColors.map((c) => colorNames[c]).join(' & ')}
-							wins!
+							{config.colorWinsLabel.replace(
+								'{colors}',
+								winningColors.map((c) => colorNames[c]).join(' & ')
+							)}
 						</p>
 					</div>
 					<p className="relative mt-2 text-center text-sm font-medium text-white/90 sm:text-base">
-						{maxFactionSize} players connected
+						{config.playersConnectedLabel.replace(
+							'{count}',
+							maxFactionSize.toString()
+						)}
 					</p>
 				</div>
 			</div>
@@ -222,7 +217,9 @@ export const ColorResultsView: React.FC = () => {
 
 			{/* Round progress */}
 			<div className="rounded-full bg-slate-100 px-4 py-1.5 text-center text-sm font-medium text-slate-600">
-				Round {roundNumber} of {totalRounds}
+				{config.roundOfTotalLabel
+					.replace('{current}', roundNumber.toString())
+					.replace('{total}', totalRounds.toString())}
 			</div>
 
 			{/* Next round button (host only) */}
@@ -231,7 +228,7 @@ export const ColorResultsView: React.FC = () => {
 					type="button"
 					className="km-btn-primary h-11 w-full max-w-xs sm:max-w-sm"
 					onClick={handleNextRound}
-					disabled={buttonCooldown}
+					disabled={isCoolingDown}
 				>
 					<CircleArrowRight className="size-5" />
 					{config.nextRoundButton}

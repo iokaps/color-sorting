@@ -4,14 +4,8 @@ import { NetworkVisualization } from '@/components/network-visualization';
 import { PieChart } from '@/components/pie-chart';
 import { RacingBars } from '@/components/racing-bars';
 import { config } from '@/config';
-import { useDynamicStore } from '@/hooks/useDynamicStore';
-import { registerColorStore } from '@/hooks/useGlobalController';
+import { useColorStores } from '@/hooks/useColorStores';
 import { useServerTimer } from '@/hooks/useServerTime';
-import {
-	createColorFactionState,
-	getColorStoreName,
-	type ColorFactionState
-} from '@/state/stores/color-store';
 import {
 	globalStore,
 	type ColorName,
@@ -56,106 +50,8 @@ const ColorPresenterInner: React.FC<ColorPresenterInnerProps> = ({
 	const roundDurationMs = (roundDurationSeconds || 90) * 1000;
 	const remainingMs = Math.max(0, roundDurationMs - elapsedMs);
 
-	// Initialize stores for all 10 colors (unconditional hook calls required by React)
-	const redStore = useDynamicStore(
-		getColorStoreName('red'),
-		createColorFactionState()
-	);
-	const blueStore = useDynamicStore(
-		getColorStoreName('blue'),
-		createColorFactionState()
-	);
-	const greenStore = useDynamicStore(
-		getColorStoreName('green'),
-		createColorFactionState()
-	);
-	const yellowStore = useDynamicStore(
-		getColorStoreName('yellow'),
-		createColorFactionState()
-	);
-	const purpleStore = useDynamicStore(
-		getColorStoreName('purple'),
-		createColorFactionState()
-	);
-	const pinkStore = useDynamicStore(
-		getColorStoreName('pink'),
-		createColorFactionState()
-	);
-	const indigoStore = useDynamicStore(
-		getColorStoreName('indigo'),
-		createColorFactionState()
-	);
-	const cyanStore = useDynamicStore(
-		getColorStoreName('cyan'),
-		createColorFactionState()
-	);
-	const orangeStore = useDynamicStore(
-		getColorStoreName('orange'),
-		createColorFactionState()
-	);
-	const limeStore = useDynamicStore(
-		getColorStoreName('lime'),
-		createColorFactionState()
-	);
-
-	// Register all stores with the global controller
-	React.useEffect(() => {
-		// Register ALL stores (even inactive ones) so they're available for round calculations
-		registerColorStore('red', redStore.store);
-		registerColorStore('blue', blueStore.store);
-		registerColorStore('green', greenStore.store);
-		registerColorStore('yellow', yellowStore.store);
-		registerColorStore('purple', purpleStore.store);
-		registerColorStore('pink', pinkStore.store);
-		registerColorStore('indigo', indigoStore.store);
-		registerColorStore('cyan', cyanStore.store);
-		registerColorStore('orange', orangeStore.store);
-		registerColorStore('lime', limeStore.store);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
-
-	// Get snapshots for all colors (unconditional hook calls - required by React Rules of Hooks)
-	// These capture reactive updates from the stores
-	const redSnapshot = useSnapshot(redStore.store.proxy);
-	const blueSnapshot = useSnapshot(blueStore.store.proxy);
-	const greenSnapshot = useSnapshot(greenStore.store.proxy);
-	const yellowSnapshot = useSnapshot(yellowStore.store.proxy);
-	const purpleSnapshot = useSnapshot(purpleStore.store.proxy);
-	const pinkSnapshot = useSnapshot(pinkStore.store.proxy);
-	const indigoSnapshot = useSnapshot(indigoStore.store.proxy);
-	const cyanSnapshot = useSnapshot(cyanStore.store.proxy);
-	const orangeSnapshot = useSnapshot(orangeStore.store.proxy);
-	const limeSnapshot = useSnapshot(limeStore.store.proxy);
-
-	// Build a map of all snapshots for easy access
-	const dynamicSnapshotsAll = React.useMemo<
-		Record<ColorName, ColorFactionState>
-	>(
-		() => ({
-			red: redSnapshot,
-			blue: blueSnapshot,
-			green: greenSnapshot,
-			yellow: yellowSnapshot,
-			purple: purpleSnapshot,
-			pink: pinkSnapshot,
-			indigo: indigoSnapshot,
-			cyan: cyanSnapshot,
-			orange: orangeSnapshot,
-			lime: limeSnapshot
-		}),
-		[
-			redSnapshot,
-			blueSnapshot,
-			greenSnapshot,
-			yellowSnapshot,
-			purpleSnapshot,
-			pinkSnapshot,
-			indigoSnapshot,
-			cyanSnapshot,
-			orangeSnapshot,
-			limeSnapshot
-		]
-	);
+	// Use consolidated hook for all color stores
+	const dynamicSnapshotsAll = useColorStores();
 
 	// Trigger confetti when round ends
 	React.useEffect(() => {
@@ -185,7 +81,7 @@ const ColorPresenterInner: React.FC<ColorPresenterInnerProps> = ({
 			{roundActive && (
 				<div className="rounded-2xl border border-blue-400/30 bg-blue-50/20 px-8 py-6 text-center backdrop-blur-sm">
 					<p className="text-lg font-semibold text-blue-200">
-						Round {roundNumber}
+						{config.roundNumber} {roundNumber}
 					</p>
 					<p className="mt-2 text-6xl font-bold text-blue-300">
 						<KmTimeCountdown ms={remainingMs} />

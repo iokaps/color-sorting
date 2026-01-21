@@ -131,7 +131,30 @@ export const schema = z.object({
 	totalConnectedLabel2: z.string().default('total connected'),
 	noPlayersInFactionLabel: z.string().default('No players in {color} faction'),
 	connectedTooltipLabel: z.string().default('Connected'),
-	notConnectedTooltipLabel: z.string().default('Not connected')
+	notConnectedTooltipLabel: z.string().default('Not connected'),
+
+	// QR Scanner
+	qrScannerCloseButton: z.string().default('Close'),
+	qrScannerCameraPermissionDenied: z
+		.string()
+		.default('Camera permission denied: {message}'),
+	qrScannerPointAtCode: z.string().default('Point your camera at a QR code'),
+	qrScannerProcessing: z.string().default('QR code detected, processing...'),
+
+	// Results view
+	colorWinsLabel: z.string().default('{colors} wins!'),
+	playersConnectedLabel: z.string().default('{count} players connected'),
+	roundOfTotalLabel: z.string().default('Round {current} of {total}'),
+	leaderboardTitle: z.string().default('Leaderboard'),
+	tiedForFirstLabel: z.string().default('🎉 Tied for First!'),
+	winnerLabel: z.string().default('🌟 Winner!'),
+	pointsLabel: z.string().default('points'),
+	roundResultsTitle: z.string().default('Round Results'),
+	tieLabel: z.string().default('Tie:'),
+	largestGroupLabel: z.string().default('largest group'),
+	connectionLabel: z.string().default('connection'),
+	connectionsLabel: z.string().default('connections'),
+	bonusLabel: z.string().default('bonus')
 });
 
 export type Config = z.infer<typeof schema>;

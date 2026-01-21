@@ -1,5 +1,6 @@
 import { withKmProviders } from '@/components/with-km-providers';
 import { config } from '@/config';
+import { useButtonCooldown } from '@/hooks/useButtonCooldown';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useGlobalController } from '@/hooks/useGlobalController';
 import { generateLink } from '@/kit/generate-link';
@@ -20,18 +21,8 @@ const App: React.FC = () => {
 	const { title } = config;
 	const isHost = kmClient.clientContext.mode === 'host';
 	const { started, gameComplete } = useSnapshot(globalStore.proxy);
-	const [buttonCooldown, setButtonCooldown] = React.useState(true);
+	const [isCoolingDown, startCooldown] = useButtonCooldown(1000);
 	useDocumentTitle(title);
-
-	// Button cooldown to prevent accidentally spamming start/stop
-	React.useEffect(() => {
-		setButtonCooldown(true);
-		const timeout = setTimeout(() => {
-			setButtonCooldown(false);
-		}, 1000);
-
-		return () => clearTimeout(timeout);
-	}, [started]);
 
 	// Handle reset game with confirmation
 	const handleResetGame = async () => {
@@ -39,13 +30,22 @@ const App: React.FC = () => {
 			'Are you sure you want to reset the game? All progress will be lost.'
 		);
 		if (confirmed) {
-			setButtonCooldown(true);
+			startCooldown();
 			try {
 				await roundActions.resetGame();
 			} catch (error) {
 				console.error('Failed to reset game:', error);
-				setButtonCooldown(false);
 			}
+		}
+	};
+
+	// Handle stop game with cooldown
+	const handleStopGame = async () => {
+		startCooldown();
+		try {
+			await globalActions.stopGame();
+		} catch (error) {
+			console.error('Failed to stop game:', error);
 		}
 	};
 
@@ -77,8 +77,8 @@ const App: React.FC = () => {
 						<button
 							type="button"
 							className="km-btn-error"
-							onClick={globalActions.stopGame}
-							disabled={buttonCooldown}
+							onClick={handleStopGame}
+							disabled={isCoolingDown}
 						>
 							<CircleStop className="size-5" />
 							{config.stopButton}
@@ -89,7 +89,7 @@ const App: React.FC = () => {
 							type="button"
 							className="km-btn-neutral"
 							onClick={handleResetGame}
-							disabled={buttonCooldown}
+							disabled={isCoolingDown}
 						>
 							<RotateCcw className="size-5" />
 							{config.resetGameButton}

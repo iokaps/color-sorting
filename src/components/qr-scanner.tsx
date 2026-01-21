@@ -1,3 +1,4 @@
+import { config } from '@/config';
 import { BrowserMultiFormatReader } from '@zxing/browser';
 import { X } from 'lucide-react';
 import * as React from 'react';
@@ -57,7 +58,9 @@ export const QrScanner: React.FC<QrScannerProps> = ({ onScan, onClose }) => {
 				const message =
 					err instanceof Error ? err.message : 'Failed to access camera';
 				console.error('[QrScanner] Error starting scan:', message, err);
-				setError(`Camera permission denied: ${message}`);
+				setError(
+					config.qrScannerCameraPermissionDenied.replace('{message}', message)
+				);
 				setIsScanning(false);
 			}
 		};
@@ -80,7 +83,7 @@ export const QrScanner: React.FC<QrScannerProps> = ({ onScan, onClose }) => {
 							className="km-btn-primary w-full"
 							onClick={onClose}
 						>
-							Close
+							{config.qrScannerCloseButton}
 						</button>
 					</div>
 				) : (
@@ -110,8 +113,8 @@ export const QrScanner: React.FC<QrScannerProps> = ({ onScan, onClose }) => {
 
 						<p className="text-center text-white">
 							{isScanning
-								? 'Point your camera at a QR code'
-								: 'QR code detected, processing...'}
+								? config.qrScannerPointAtCode
+								: config.qrScannerProcessing}
 						</p>
 					</>
 				)}

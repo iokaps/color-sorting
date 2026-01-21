@@ -1,4 +1,10 @@
 import { kmClient } from '@/services/km-client';
+import {
+	buildAdjacencyList,
+	findConnectedComponent,
+	findLargestComponentSize,
+	getAllComponentSizes
+} from '@/utils/graph-utils';
 import type { KokimokiStore } from '@kokimoki/app';
 import {
 	createEdgeKey,
@@ -120,8 +126,7 @@ export const colorActions = {
 	},
 
 	/**
-	 * Calculate the largest connected faction using iterative DFS (no stack overflow)
-	 * This reads from the centralized edges so any client gets the full graph
+	 * Calculate the largest connected faction using graph utilities
 	 */
 	calculateLargestFaction(store: KokimokiStore<ColorFactionState>): number {
 		if (!store || !store.proxy) return 1;
@@ -130,56 +135,23 @@ export const colorActions = {
 		if (!state?.players) return 1;
 		if (Object.keys(state.players).length === 0) return 1;
 
-		// Build adjacency list from ALL edges (centralized graph)
-		const adjacencyList = new Map<string, Set<string>>();
+		const edgeKeys = Object.keys(state.edges || {});
+		const adjacencyList = buildAdjacencyList(edgeKeys, parseEdgeKey);
 		const allPlayerIds = new Set(Object.keys(state.players));
 
-		// Process all edges to build the graph
-		if (state.edges) {
-			for (const edgeKey of Object.keys(state.edges)) {
-				const [a, b] = parseEdgeKey(edgeKey);
-				allPlayerIds.add(a);
-				allPlayerIds.add(b);
-
-				if (!adjacencyList.has(a)) adjacencyList.set(a, new Set());
-				if (!adjacencyList.has(b)) adjacencyList.set(b, new Set());
-				adjacencyList.get(a)!.add(b);
-				adjacencyList.get(b)!.add(a);
-			}
+		// Add players from edges that might not be in players map
+		for (const edgeKey of edgeKeys) {
+			const [a, b] = parseEdgeKey(edgeKey);
+			allPlayerIds.add(a);
+			allPlayerIds.add(b);
 		}
 
-		// Find largest connected component using iterative DFS (prevents stack overflow)
-		const visited = new Set<string>();
-		let largestSize = 0;
-
-		for (const startId of allPlayerIds) {
-			if (visited.has(startId)) continue;
-
-			// Iterative DFS
-			const stack = [startId];
-			let componentSize = 0;
-
-			while (stack.length > 0) {
-				const node = stack.pop()!;
-				if (visited.has(node)) continue;
-				visited.add(node);
-				componentSize++;
-
-				for (const neighbor of adjacencyList.get(node) || []) {
-					if (!visited.has(neighbor)) stack.push(neighbor);
-				}
-			}
-
-			largestSize = Math.max(largestSize, componentSize);
-		}
-
+		const largestSize = findLargestComponentSize(allPlayerIds, adjacencyList);
 		return Math.max(1, largestSize);
 	},
 
 	/**
 	 * Calculate all connected faction clusters, returning their sizes
-	 * Useful for presenter visualization showing faction distribution
-	 * @returns Array of cluster sizes sorted largest to smallest
 	 */
 	getAllFactionClusters(store: KokimokiStore<ColorFactionState>): number[] {
 		if (!store || !store.proxy) return [];
@@ -188,59 +160,22 @@ export const colorActions = {
 		if (!state?.players) return [];
 		if (Object.keys(state.players).length === 0) return [];
 
-		// Build adjacency list from ALL edges
-		const adjacencyList = new Map<string, Set<string>>();
+		const edgeKeys = Object.keys(state.edges || {});
+		const adjacencyList = buildAdjacencyList(edgeKeys, parseEdgeKey);
 		const allPlayerIds = new Set(Object.keys(state.players));
 
-		// Process all edges to build the graph
-		if (state.edges) {
-			for (const edgeKey of Object.keys(state.edges)) {
-				const [a, b] = parseEdgeKey(edgeKey);
-				allPlayerIds.add(a);
-				allPlayerIds.add(b);
-
-				if (!adjacencyList.has(a)) adjacencyList.set(a, new Set());
-				if (!adjacencyList.has(b)) adjacencyList.set(b, new Set());
-				adjacencyList.get(a)!.add(b);
-				adjacencyList.get(b)!.add(a);
-			}
+		// Add players from edges that might not be in players map
+		for (const edgeKey of edgeKeys) {
+			const [a, b] = parseEdgeKey(edgeKey);
+			allPlayerIds.add(a);
+			allPlayerIds.add(b);
 		}
 
-		// Find all connected components using iterative DFS
-		const visited = new Set<string>();
-		const clusterSizes: number[] = [];
-
-		for (const startId of allPlayerIds) {
-			if (visited.has(startId)) continue;
-
-			// Iterative DFS
-			const stack = [startId];
-			let componentSize = 0;
-
-			while (stack.length > 0) {
-				const node = stack.pop()!;
-				if (visited.has(node)) continue;
-				visited.add(node);
-				componentSize++;
-
-				for (const neighbor of adjacencyList.get(node) || []) {
-					if (!visited.has(neighbor)) stack.push(neighbor);
-				}
-			}
-
-			clusterSizes.push(componentSize);
-		}
-
-		// Sort by size descending
-		clusterSizes.sort((a, b) => b - a);
-		return clusterSizes;
+		return getAllComponentSizes(allPlayerIds, adjacencyList);
 	},
 
 	/**
-	 * Calculate the faction size of a specific player (the faction they belong to)
-	 * @param store The color faction store
-	 * @param playerId The player ID to find the faction for
-	 * @returns The size of the faction that player belongs to
+	 * Calculate the faction size of a specific player
 	 */
 	getPlayerFactionSize(
 		store: KokimokiStore<ColorFactionState>,
@@ -248,40 +183,12 @@ export const colorActions = {
 	): number {
 		const state = store.proxy;
 		if (!state?.players) return 1;
-		if (!state.players[playerId]) return 1; // Player not in store, isolated
+		if (!state.players[playerId]) return 1;
 
-		// Build adjacency list
-		const adjacencyList = new Map<string, Set<string>>();
-		const allPlayerIds = new Set(Object.keys(state.players));
+		const edgeKeys = Object.keys(state.edges || {});
+		const adjacencyList = buildAdjacencyList(edgeKeys, parseEdgeKey);
 
-		// Process all edges
-		for (const edgeKey of Object.keys(state.edges || {})) {
-			const [a, b] = parseEdgeKey(edgeKey);
-			allPlayerIds.add(a);
-			allPlayerIds.add(b);
-
-			if (!adjacencyList.has(a)) adjacencyList.set(a, new Set());
-			if (!adjacencyList.has(b)) adjacencyList.set(b, new Set());
-			adjacencyList.get(a)!.add(b);
-			adjacencyList.get(b)!.add(a);
-		}
-
-		// Find the connected component containing this player using iterative DFS
-		const visited = new Set<string>();
-		const stack = [playerId];
-		let componentSize = 0;
-
-		while (stack.length > 0) {
-			const node = stack.pop()!;
-			if (visited.has(node)) continue;
-			visited.add(node);
-			componentSize++;
-
-			for (const neighbor of adjacencyList.get(node) || []) {
-				if (!visited.has(neighbor)) stack.push(neighbor);
-			}
-		}
-
-		return Math.max(1, componentSize);
+		const component = findConnectedComponent(playerId, adjacencyList);
+		return Math.max(1, component.size);
 	}
 };

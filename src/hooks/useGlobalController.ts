@@ -2,11 +2,7 @@ import { kmClient } from '@/services/km-client';
 import { colorActions } from '@/state/actions/color-actions';
 import { scoringActions } from '@/state/actions/scoring-actions';
 import type { ColorFactionState } from '@/state/stores/color-store';
-import {
-	globalStore,
-	type ColorName,
-	type PlayerRoundScore
-} from '@/state/stores/global-store';
+import { globalStore, type ColorName } from '@/state/stores/global-store';
 import { generateColorArray } from '@/utils/color-utils';
 import type { KokimokiStore } from '@kokimoki/app';
 import { useSnapshot } from '@kokimoki/app';
@@ -134,121 +130,10 @@ export function useGlobalController() {
 			if (elapsedMs >= roundDurationMs && !roundEndedRef.current) {
 				roundEndedRef.current = true;
 
-				// Calculate largest faction for each color - PARALLELIZED
-				const calculateRoundResults = async () => {
-					// Wait for all stores to sync their data before calculating results
-					// This ensures all player connections and edges are propagated
-					await new Promise((resolve) => setTimeout(resolve, 250));
-
-					const localCOLORS = generateColorArray(numberOfColors);
-					// Initialize results with all colors (not just the hardcoded 4)
-					const results: Record<ColorName, number> = {};
-					localCOLORS.forEach((color) => {
-						results[color] = 0;
-					});
-
-					try {
-						// Calculate all faction sizes from currently accessible stores
-						for (const color of localCOLORS) {
-							const store = colorStoresCache.get(color);
-							if (store) {
-								const factionSize = colorActions.calculateLargestFaction(store);
-								results[color] = factionSize;
-							}
-						}
-					} catch (error) {
-						console.error('Error calculating round results:', error);
-					}
-
-					// Find winning color(s) - support ties
-					const maxSize = Math.max(...localCOLORS.map((c) => results[c]), 0);
-					const winningColors: ColorName[] = localCOLORS.filter(
-						(c) => results[c] === maxSize && maxSize > 0
-					);
-
-					// Get current state values before transact
-					const currentRoundNumber = globalStore.proxy.roundNumber;
-					const colorNamesMap = globalStore.proxy.colorNames;
-					const winBonus = globalStore.proxy.winBonus || 10;
-
-					// Calculate individual player scores for each color
-					const playerScoresThisRound: Record<string, PlayerRoundScore> = {};
-
-					for (const color of localCOLORS) {
-						const colorStore = colorStoresCache.get(color);
-						if (!colorStore) continue;
-
-						// Get connection points for each player in this color
-						const connectionPoints =
-							scoringActions.calculatePlayerConnectionPoints(colorStore);
-
-						// Get players in winning faction
-						const winningPlayers =
-							scoringActions.getWinningFactionPlayers(colorStore);
-
-						// Score each player in this color
-						for (const [playerId, points] of Object.entries(connectionPoints)) {
-							const isWinner =
-								winningColors.includes(color) && winningPlayers.has(playerId);
-							const bonusPoints = isWinner ? winBonus : 0;
-							const totalRoundPoints = points + bonusPoints;
-
-							playerScoresThisRound[playerId] = {
-								roundNumber: currentRoundNumber,
-								color,
-								colorName: colorNamesMap[color],
-								factionSize: winningPlayers.size,
-								connectionPoints: points,
-								bonusPoints,
-								totalRoundPoints
-							};
-						}
-					}
-
-					// Update global state with results and player scores
-					await kmClient.transact([globalStore], ([globalState]) => {
-						globalState.roundResults = results;
-						globalState.roundActive = false;
-
-						// Save round result to history (now with all winning colors for ties)
-						globalState.roundHistory[globalState.roundNumber.toString()] = {
-							winningColors,
-							winningColorNames: winningColors.map(
-								(c) => globalState.colorNames[c]
-							),
-							largestFactionSize: maxSize,
-							bonusPointsPerPlayer: winBonus
-						};
-
-						// Update individual player scores
-						for (const [playerId, roundScore] of Object.entries(
-							playerScoresThisRound
-						)) {
-							if (!globalState.playerScores[playerId]) {
-								const playerName =
-									globalState.players[playerId]?.name || 'Unknown';
-								globalState.playerScores[playerId] = {
-									name: playerName,
-									totalScore: 0,
-									roundScores: {}
-								};
-							}
-
-							globalState.playerScores[playerId].roundScores[
-								globalState.roundNumber.toString()
-							] = roundScore;
-							globalState.playerScores[playerId].totalScore +=
-								roundScore.totalRoundPoints;
-						}
-
-						// Check if all rounds complete
-						if (globalState.roundNumber >= globalState.totalRounds) {
-							globalState.gameComplete = true;
-						}
-					});
-				};
-
-				calculateRoundResults().catch(console.error);
+				const localCOLORS = generateColorArray(numberOfColors);
+				scoringActions
+					.calculateAndSaveRoundResults(localCOLORS, colorStoresCache)
+					.catch(console.error);
 			}
 		} else {
 			// Reset flag when round ends

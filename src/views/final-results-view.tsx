@@ -1,4 +1,5 @@
 import { config } from '@/config';
+import { useButtonCooldown } from '@/hooks/useButtonCooldown';
 import { kmClient } from '@/services/km-client';
 import { roundActions } from '@/state/actions/round-actions';
 import { globalStore, type ColorName } from '@/state/stores/global-store';
@@ -15,7 +16,7 @@ export const FinalResultsView: React.FC = () => {
 	);
 	const isPresenter = kmClient.clientContext.mode === 'presenter';
 	const confetti = useKmConfettiContext();
-	const [buttonCooldown, setButtonCooldown] = React.useState(false);
+	const [isCoolingDown, startCooldown] = useButtonCooldown(1000);
 	const [expandedPlayer, setExpandedPlayer] = React.useState<string | null>(
 		null
 	);
@@ -28,22 +29,12 @@ export const FinalResultsView: React.FC = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	// Button cooldown
-	React.useEffect(() => {
-		if (!buttonCooldown) return;
-		const timeout = setTimeout(() => {
-			setButtonCooldown(false);
-		}, 1000);
-		return () => clearTimeout(timeout);
-	}, [buttonCooldown]);
-
 	const handlePlayAgain = async () => {
-		setButtonCooldown(true);
+		startCooldown();
 		try {
 			await roundActions.resetGame();
 		} catch (error) {
 			console.error('Failed to reset game:', error);
-			setButtonCooldown(false);
 		}
 	};
 
@@ -107,7 +98,9 @@ export const FinalResultsView: React.FC = () => {
 						<div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
 						<div className="relative">
 							<p className="text-sm font-semibold text-yellow-900/80 sm:text-base">
-								{topPlayers.length > 1 ? '🎉 Tied for First!' : '🌟 Winner!'}
+								{topPlayers.length > 1
+									? config.tiedForFirstLabel
+									: config.winnerLabel}
 							</p>
 							<div className="mt-2 space-y-1">
 								{topPlayers.map((player) => (
@@ -116,7 +109,7 @@ export const FinalResultsView: React.FC = () => {
 											{player.name}
 										</p>
 										<p className="text-sm font-semibold text-yellow-900/70 sm:text-base">
-											{player.totalScore} points
+											{player.totalScore} {config.pointsLabel}
 										</p>
 									</div>
 								))}
@@ -134,7 +127,7 @@ export const FinalResultsView: React.FC = () => {
 						isPresenter ? 'text-slate-300' : 'text-slate-700'
 					)}
 				>
-					Leaderboard
+					{config.leaderboardTitle}
 				</h2>
 
 				<div className="space-y-2 sm:space-y-3">
@@ -230,11 +223,12 @@ export const FinalResultsView: React.FC = () => {
 																isPresenter ? 'text-white' : ''
 															)}
 														>
-															{roundScore.connectionPoints} connection
+															{roundScore.connectionPoints}{' '}
 															{roundScore.connectionPoints !== 1
-																? 's'
-																: ''}{' '}
-															{isWinner && `+ ${roundScore.bonusPoints} bonus`}
+																? config.connectionsLabel
+																: config.connectionLabel}{' '}
+															{isWinner &&
+																`+ ${roundScore.bonusPoints} ${config.bonusLabel}`}
 														</p>
 													</div>
 													<div className="text-right">
@@ -262,7 +256,7 @@ export const FinalResultsView: React.FC = () => {
 							isPresenter ? 'text-slate-300' : 'text-slate-700'
 						)}
 					>
-						Round Results
+						{config.roundResultsTitle}
 					</h3>
 					<div className="space-y-1.5 sm:space-y-2">
 						{sortedRounds.map((result) => (
@@ -290,7 +284,7 @@ export const FinalResultsView: React.FC = () => {
 													isPresenter ? 'text-white' : 'text-slate-900'
 												)}
 											>
-												Tie: {result.winningColorNames.join(', ')}
+												{config.tieLabel} {result.winningColorNames.join(', ')}
 											</p>
 										) : (
 											<p
@@ -299,7 +293,7 @@ export const FinalResultsView: React.FC = () => {
 													isPresenter ? 'text-white' : 'text-slate-900'
 												)}
 											>
-												Winner:{' '}
+												{config.winnerLabel.replace('🌟 ', '')}{' '}
 												<span
 													className={`${getColorClass(result.winningColors[0])}`}
 												>
@@ -325,7 +319,7 @@ export const FinalResultsView: React.FC = () => {
 												isPresenter ? 'text-slate-400' : 'text-slate-600'
 											)}
 										>
-											largest group
+											{config.largestGroupLabel}
 										</p>
 									</div>
 								</div>
@@ -341,7 +335,7 @@ export const FinalResultsView: React.FC = () => {
 					type="button"
 					className="km-btn-primary h-10 text-sm sm:h-11"
 					onClick={handlePlayAgain}
-					disabled={buttonCooldown}
+					disabled={isCoolingDown}
 				>
 					<RotateCcw className="size-4" />
 					{config.playAgainButton}
