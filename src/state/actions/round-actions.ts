@@ -83,11 +83,21 @@ function assignColorsWithConstraints(
 
 export const roundActions = {
 	async assignColorsAndStartRound() {
+		// Check if max rounds reached - don't start another round
+		if (globalStore.proxy.roundNumber >= globalStore.proxy.totalRounds) {
+			return;
+		}
+
 		// Clear all faction data from previous round
 		await factionActions.clearAllFactions();
 
 		// Assign colors to players
 		await kmClient.transact([globalStore], ([globalState]) => {
+			// Double-check round limit inside transaction
+			if (globalState.roundNumber >= globalState.totalRounds) {
+				return;
+			}
+
 			// Get list of online player IDs
 			const onlinePlayerIds = Array.from(globalStore.connections.clientIds);
 
@@ -98,7 +108,6 @@ export const roundActions = {
 				emptyResults[color] = 0;
 			}
 			globalState.roundResults = emptyResults;
-			globalState.gameComplete = false;
 
 			// Store previous colors before reassignment
 			const previousColors = { ...globalState.playerColors };
@@ -151,6 +160,8 @@ export const roundActions = {
 		// Reset global state
 		await kmClient.transact([globalStore], ([globalState]) => {
 			globalState.roundNumber = 0;
+			globalState.roundActive = false;
+			globalState.roundStartTimestamp = 0;
 			globalState.roundHistory = {};
 			globalState.playerScores = {};
 			const resetResults: Record<ColorName, number> = {};
@@ -160,6 +171,7 @@ export const roundActions = {
 			}
 			globalState.roundResults = resetResults;
 			globalState.playerColors = {};
+			globalState.playerShortCodes = {};
 			globalState.gameComplete = false;
 			globalState.started = false;
 		});

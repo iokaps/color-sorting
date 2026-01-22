@@ -133,7 +133,7 @@ export const ColorRoundControlView: React.FC = () => {
 						type="button"
 						className="km-btn-primary"
 						onClick={handleAssignColorsAndStart}
-						disabled={buttonCooldown}
+						disabled={buttonCooldown || roundNumber >= totalRounds}
 					>
 						<CirclePlay className="size-5" />
 						{roundNumber === 0
@@ -156,7 +156,9 @@ export const ColorRoundControlView: React.FC = () => {
 			{/* Status message */}
 			<p className="text-center text-lg font-medium text-slate-700">
 				{!roundActive ? (
-					roundNumber === 0 ? (
+					roundNumber >= totalRounds ? (
+						<>{config.gameCompleteMessage}</>
+					) : roundNumber === 0 ? (
 						<>{config.clickToAssignColorsAndStartMd}</>
 					) : (
 						<>{config.clickToStartNextRoundMd}</>

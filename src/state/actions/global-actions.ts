@@ -17,6 +17,8 @@ export const globalActions = {
 		await kmClient.transact([globalStore], ([globalState]) => {
 			globalState.started = false;
 			globalState.startTimestamp = 0;
+			globalState.roundActive = false;
+			globalState.roundStartTimestamp = 0;
 		});
 	},
 
