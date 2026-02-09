@@ -67,14 +67,15 @@ export const FinalResultsView: React.FC = () => {
 	return (
 		<div className="flex h-full w-full flex-col items-center justify-center gap-4 overflow-auto px-2 py-4 sm:gap-6 sm:px-4 sm:py-6">
 			{/* Title */}
-			<div className="text-center">
-				<div className="relative mx-auto mb-2 inline-block">
-					<div className="absolute -inset-3 rounded-full bg-yellow-400/30 blur-xl" />
-					<Trophy className="relative size-10 text-yellow-500 drop-shadow-lg sm:size-14" />
+			<div className="km-fade-in-up text-center">
+				<div className="relative mx-auto mb-3 inline-block">
+					<div className="absolute -inset-4 rounded-full bg-yellow-400/25 blur-2xl" />
+					<div className="absolute -inset-2 rounded-full bg-amber-400/15 blur-lg" />
+					<Trophy className="km-float relative size-12 text-yellow-500 drop-shadow-lg sm:size-16" />
 				</div>
 				<h1
 					className={cn(
-						'text-2xl font-bold sm:text-4xl',
+						'text-2xl font-extrabold tracking-tight sm:text-4xl',
 						isPresenter ? 'text-white' : 'text-slate-900'
 					)}
 				>
@@ -82,7 +83,7 @@ export const FinalResultsView: React.FC = () => {
 				</h1>
 				<p
 					className={cn(
-						'mt-1 text-sm sm:text-base',
+						'mt-1.5 text-sm sm:text-base',
 						isPresenter ? 'text-slate-300' : 'text-slate-500'
 					)}
 				>
@@ -92,10 +93,11 @@ export const FinalResultsView: React.FC = () => {
 
 			{/* Overall winner banner with tie handling */}
 			{topScore > 0 && (
-				<div className="relative w-full max-w-md">
-					<div className="absolute -inset-2 rounded-3xl bg-yellow-400/40 blur-xl" />
-					<div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-500 px-5 py-4 text-center shadow-xl sm:px-6 sm:py-5">
-						<div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+				<div className="km-scale-in relative w-full max-w-md">
+					<div className="absolute -inset-3 rounded-3xl bg-yellow-400/30 blur-2xl" />
+					<div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 px-5 py-5 text-center shadow-2xl sm:px-6 sm:py-6">
+						<div className="absolute inset-0 bg-gradient-to-b from-white/25 via-transparent to-black/10" />
+						<div className="km-shimmer absolute inset-0" />
 						<div className="relative">
 							<p className="text-sm font-semibold text-yellow-900/80 sm:text-base">
 								{topPlayers.length > 1
@@ -120,7 +122,7 @@ export const FinalResultsView: React.FC = () => {
 			)}
 
 			{/* Leaderboard */}
-			<div className="w-full max-w-2xl space-y-3 sm:space-y-4">
+			<div className="km-fade-in-up-delay-1 w-full max-w-2xl space-y-3 sm:space-y-4">
 				<h2
 					className={cn(
 						'text-center text-base font-semibold sm:text-lg',
@@ -134,7 +136,7 @@ export const FinalResultsView: React.FC = () => {
 					{leaderboard.map((player, index) => (
 						<div
 							key={player.clientId}
-							className="shadow-card hover:shadow-card-hover overflow-hidden rounded-2xl bg-white transition-shadow"
+							className="shadow-card hover:shadow-card-hover overflow-hidden rounded-2xl bg-white transition-all duration-300 hover:-translate-y-0.5"
 						>
 							{/* Main row - clickable to expand */}
 							<button

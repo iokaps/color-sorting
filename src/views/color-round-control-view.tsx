@@ -97,7 +97,7 @@ export const ColorRoundControlView: React.FC = () => {
 	return (
 		<div className="flex flex-col items-center justify-center space-y-8 p-6">
 			{/* Connected players count */}
-			<div className="flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-2">
+			<div className="flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 px-5 py-2.5 shadow-sm ring-1 ring-blue-100/80">
 				<Users className="size-5 text-blue-600" />
 				<span className="text-lg font-semibold text-blue-900">
 					{totalOnline} {config.players}
@@ -111,16 +111,21 @@ export const ColorRoundControlView: React.FC = () => {
 
 			{/* Round info */}
 			<div className="text-center">
-				<p className="text-sm text-slate-600">
+				<p className="text-sm font-medium text-slate-500">
 					{config.roundNumber} {roundNumber} / {totalRounds}
 				</p>
 				{roundActive && (
-					<p className="mt-2 text-6xl font-bold text-slate-900">
+					<p
+						className={cn(
+							'mt-2 text-7xl font-extrabold tracking-tight text-slate-900 tabular-nums',
+							remainingMs < 10000 && 'km-timer-urgent'
+						)}
+					>
 						<KmTimeCountdown ms={remainingMs} />
 					</p>
 				)}
 				{roundActive && remainingMs < 10000 && (
-					<p className="mt-2 animate-pulse text-lg font-semibold text-red-600">
+					<p className="mt-2 text-lg font-semibold text-red-500">
 						{config.almostTimeMd}
 					</p>
 				)}
@@ -154,7 +159,7 @@ export const ColorRoundControlView: React.FC = () => {
 			</div>
 
 			{/* Status message */}
-			<p className="text-center text-lg font-medium text-slate-700">
+			<p className="text-center text-lg font-medium text-slate-600">
 				{!roundActive ? (
 					roundNumber >= totalRounds ? (
 						<>{config.gameCompleteMessage}</>
@@ -175,7 +180,7 @@ export const ColorRoundControlView: React.FC = () => {
 
 			{/* Visualization mode selector */}
 			<div className="mt-4 flex flex-col items-center gap-3">
-				<p className="text-sm font-medium text-slate-600">
+				<p className="text-sm font-medium text-slate-500">
 					{config.visualizationModeLabel}
 				</p>
 				<div className="flex flex-wrap justify-center gap-2">
@@ -185,10 +190,10 @@ export const ColorRoundControlView: React.FC = () => {
 							type="button"
 							onClick={() => globalActions.setPresenterVisualizationMode(mode)}
 							className={cn(
-								'flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all',
+								'flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200',
 								presenterVisualizationMode === mode
-									? 'bg-blue-500 text-white shadow-md'
-									: 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+									? 'bg-gradient-to-b from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25'
+									: 'bg-white text-slate-600 shadow-sm ring-1 ring-slate-200/80 hover:bg-slate-50 hover:shadow-md'
 							)}
 							title={label}
 						>

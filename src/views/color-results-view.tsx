@@ -53,16 +53,16 @@ export const ColorResultsView: React.FC = () => {
 	// Helper to get gradient colors for progress bars
 	const getBackgroundGradient = (color: ColorName): string => {
 		const gradients: Record<ColorName, string> = {
-			red: 'from-red-400 to-red-500',
-			blue: 'from-blue-400 to-blue-500',
-			green: 'from-green-400 to-green-500',
-			yellow: 'from-yellow-400 to-yellow-500',
-			purple: 'from-purple-400 to-purple-500',
+			red: 'from-rose-400 to-rose-600',
+			blue: 'from-blue-400 to-blue-600',
+			green: 'from-emerald-400 to-emerald-600',
+			yellow: 'from-amber-400 to-amber-500',
+			purple: 'from-purple-400 to-purple-600',
 			pink: 'from-pink-400 to-pink-500',
-			indigo: 'from-indigo-400 to-indigo-500',
-			cyan: 'from-cyan-400 to-cyan-500',
+			indigo: 'from-indigo-400 to-indigo-600',
+			cyan: 'from-cyan-400 to-cyan-600',
 			orange: 'from-orange-400 to-orange-500',
-			lime: 'from-lime-400 to-lime-500'
+			lime: 'from-lime-400 to-lime-600'
 		};
 		return gradients[color] || 'from-slate-400 to-slate-500';
 	};
@@ -70,17 +70,18 @@ export const ColorResultsView: React.FC = () => {
 	return (
 		<div className="flex h-full w-full flex-col items-center justify-center gap-4 overflow-auto px-2 py-4 sm:gap-6 sm:px-4 sm:py-6">
 			{/* Winner announcement with glow */}
-			<div className="relative w-full max-w-md">
+			<div className="km-scale-in relative w-full max-w-md">
 				<div
-					className={`absolute -inset-2 rounded-3xl opacity-40 blur-xl ${getColorClass(winningColor)}`}
+					className={`absolute -inset-3 rounded-3xl opacity-30 blur-2xl ${getColorClass(winningColor)}`}
 				/>
 				<div
-					className={`relative overflow-hidden rounded-2xl px-4 py-5 shadow-xl sm:px-6 sm:py-6 ${getColorClass(winningColor)}`}
+					className={`relative overflow-hidden rounded-2xl px-4 py-5 shadow-2xl sm:px-6 sm:py-6 ${getColorClass(winningColor)}`}
 				>
-					<div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+					<div className="absolute inset-0 bg-gradient-to-b from-white/25 via-transparent to-black/10" />
+					<div className="km-shimmer absolute inset-0" />
 					<div className="relative flex items-center justify-center gap-2">
-						<Trophy className="size-6 text-white drop-shadow sm:size-8" />
-						<p className="text-center text-xl font-bold text-white drop-shadow sm:text-3xl">
+						<Trophy className="km-float size-6 text-white drop-shadow-lg sm:size-8" />
+						<p className="text-center text-xl font-extrabold text-white drop-shadow-lg sm:text-3xl">
 							{config.colorWinsLabel.replace(
 								'{colors}',
 								winningColors.map((c) => colorNames[c]).join(' & ')
@@ -97,7 +98,7 @@ export const ColorResultsView: React.FC = () => {
 			</div>
 
 			{/* Results table */}
-			<div className="w-full max-w-md space-y-2 sm:space-y-3">
+			<div className="km-fade-in-up-delay-1 w-full max-w-md space-y-2 sm:space-y-3">
 				<h2 className="text-center text-sm font-bold text-slate-900 sm:text-lg">
 					{config.roundResultsMd.replace(
 						'{roundNumber}',
@@ -105,29 +106,31 @@ export const ColorResultsView: React.FC = () => {
 					)}
 				</h2>
 
-				<div className="grid grid-cols-2 gap-2 sm:gap-3">
+				<div className="grid grid-cols-2 gap-2.5 sm:gap-3">
 					{COLORS.map((color) => {
 						const isWinner = winningColors.includes(color);
 						return (
 							<div
 								key={color}
 								className={cn(
-									'relative overflow-hidden rounded-xl px-3 py-3 text-center text-white shadow-md transition-all sm:px-4 sm:py-4',
+									'relative overflow-hidden rounded-2xl px-3 py-3 text-center text-white shadow-lg transition-all sm:px-4 sm:py-4',
 									getColorClass(color),
-									isWinner && 'ring-2 ring-yellow-300 ring-offset-2'
+									isWinner &&
+										'scale-[1.02] ring-2 ring-yellow-300/80 ring-offset-2'
 								)}
 							>
-								<div className="absolute inset-0 bg-gradient-to-b from-white/15 to-transparent" />
+								<div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-black/10" />
+								{isWinner && <div className="km-shimmer absolute inset-0" />}
 								<div className="relative">
 									{isWinner && (
-										<p className="text-xs font-bold text-yellow-200 sm:text-sm">
+										<p className="text-xs font-bold text-yellow-200 drop-shadow sm:text-sm">
 											{config.winnerBadge}
 										</p>
 									)}
 									<p className="text-sm font-semibold drop-shadow-sm sm:text-base">
 										{colorNames[color]}
 									</p>
-									<p className="text-xl font-bold drop-shadow-sm sm:text-2xl">
+									<p className="text-2xl font-extrabold drop-shadow sm:text-3xl">
 										{roundResults[color]}
 									</p>
 								</div>
@@ -139,11 +142,11 @@ export const ColorResultsView: React.FC = () => {
 
 			{/* Cumulative Leaderboard */}
 			{Object.keys(playerScores).length > 0 && (
-				<div className="km-card w-full max-w-md">
+				<div className="km-card km-fade-in-up-delay-2 w-full max-w-md">
 					<h3 className="mb-3 text-center text-sm font-bold text-slate-900 sm:text-base">
 						{config.cumulativeLeaderboardLabel}
 					</h3>
-					<div className="space-y-2">
+					<div className="space-y-1.5">
 						{Object.entries(playerScores)
 							.map(([, player]) => ({
 								name: player.name,
@@ -154,7 +157,7 @@ export const ColorResultsView: React.FC = () => {
 							.map((player, idx) => (
 								<div
 									key={idx}
-									className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 sm:px-4 sm:py-2.5"
+									className="flex items-center justify-between rounded-xl bg-gradient-to-r from-slate-50 to-slate-100/50 px-3 py-2.5 transition-colors hover:from-slate-100 hover:to-slate-50 sm:px-4"
 								>
 									<div className="flex items-center gap-2">
 										<span className="flex size-6 items-center justify-center text-sm font-bold text-slate-500">
@@ -178,7 +181,7 @@ export const ColorResultsView: React.FC = () => {
 			)}
 
 			{/* Faction Size Comparison */}
-			<div className="km-card w-full max-w-md space-y-3">
+			<div className="km-card km-fade-in-up-delay-3 w-full max-w-md space-y-3">
 				<h3 className="text-center text-sm font-bold text-slate-900">
 					{config.factionComparisonLabel}
 				</h3>
@@ -198,11 +201,11 @@ export const ColorResultsView: React.FC = () => {
 									{roundResults[color]} {config.factionSizeLabel.toLowerCase()}
 								</span>
 							</div>
-							<div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+							<div className="h-3 overflow-hidden rounded-full bg-slate-100">
 								<div
-									className={`h-full transition-all duration-500 ${
+									className={`h-full rounded-full transition-all duration-700 ease-out ${
 										isWinner
-											? 'bg-gradient-to-r from-yellow-400 to-yellow-500'
+											? 'bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 shadow-sm shadow-yellow-400/30'
 											: `bg-gradient-to-r ${getBackgroundGradient(color)}`
 									}`}
 									style={{
@@ -216,7 +219,7 @@ export const ColorResultsView: React.FC = () => {
 			</div>
 
 			{/* Round progress */}
-			<div className="rounded-full bg-slate-100 px-4 py-1.5 text-center text-sm font-medium text-slate-600">
+			<div className="rounded-full bg-white/80 px-5 py-2 text-center text-sm font-medium text-slate-600 shadow-sm ring-1 ring-slate-200/50 backdrop-blur-sm">
 				{config.roundOfTotalLabel
 					.replace('{current}', roundNumber.toString())
 					.replace('{total}', totalRounds.toString())}

@@ -10,7 +10,7 @@ interface LayoutProps {
 const PlayerRoot: React.FC<LayoutProps> = ({ children, className }) => (
 	<div
 		className={cn(
-			'grid min-h-dvh grid-rows-[auto_1fr_auto] bg-gradient-to-b from-slate-50 to-slate-100',
+			'km-animated-bg grid min-h-dvh grid-rows-[auto_1fr_auto]',
 			className
 		)}
 	>
@@ -21,7 +21,7 @@ const PlayerRoot: React.FC<LayoutProps> = ({ children, className }) => (
 const PlayerHeader: React.FC<LayoutProps> = ({ children, className }) => (
 	<header
 		className={cn(
-			'sticky top-0 z-10 border-b border-slate-200/50 bg-white/80 shadow-sm backdrop-blur-md',
+			'sticky top-0 z-10 border-b border-white/60 bg-white/70 shadow-[0_1px_3px_rgba(0,0,0,0.04)] backdrop-blur-xl',
 			className
 		)}
 	>
@@ -46,7 +46,7 @@ const PlayerMain: React.FC<LayoutProps> = ({ children, className }) => (
 const PlayerFooter: React.FC<LayoutProps> = ({ children, className }) => (
 	<footer
 		className={cn(
-			'sticky bottom-0 z-10 border-t border-slate-200/50 bg-white/80 backdrop-blur-md',
+			'sticky bottom-0 z-10 border-t border-white/60 bg-white/70 shadow-[0_-1px_3px_rgba(0,0,0,0.04)] backdrop-blur-xl',
 			className
 		)}
 	>

@@ -92,15 +92,17 @@ const ColorPresenterInner: React.FC<ColorPresenterInnerProps> = ({
 			)}
 
 			{roundActive && (
-				<div className="rounded-2xl border border-blue-400/30 bg-blue-50/20 px-8 py-6 text-center backdrop-blur-sm">
-					<p className="text-lg font-semibold text-blue-200">
+				<div className="rounded-3xl border border-blue-400/20 bg-blue-950/40 px-10 py-6 text-center shadow-2xl backdrop-blur-md">
+					<p className="text-lg font-semibold tracking-wide text-blue-300/80">
 						{config.roundNumber} {roundNumber}
 					</p>
-					<p className="mt-2 text-6xl font-bold text-blue-300">
+					<p
+						className={`mt-2 text-7xl font-extrabold tracking-tight text-blue-200 tabular-nums ${remainingMs < 10000 ? 'km-timer-urgent' : ''}`}
+					>
 						<KmTimeCountdown ms={remainingMs} />
 					</p>
 					{remainingMs < 10000 && (
-						<p className="mt-2 animate-pulse text-lg font-semibold text-red-400">
+						<p className="mt-2 text-lg font-semibold text-red-400">
 							{config.almostTimeMd}
 						</p>
 					)}
@@ -160,8 +162,8 @@ const ColorPresenterInner: React.FC<ColorPresenterInnerProps> = ({
 
 			{/* Summary - total players across all colors (only for pulse and network modes) */}
 			{(visualizationMode === 'pulse' || visualizationMode === 'network') && (
-				<div className="rounded-2xl border border-slate-600/50 bg-slate-700/50 px-6 py-4 text-center backdrop-blur-sm lg:px-8 lg:py-6">
-					<p className="text-3xl font-bold text-white lg:text-4xl">
+				<div className="rounded-2xl border border-white/10 bg-white/5 px-8 py-5 text-center shadow-2xl backdrop-blur-md lg:px-10 lg:py-6">
+					<p className="text-4xl font-extrabold text-white tabular-nums lg:text-5xl">
 						{colors.reduce((sum, color) => {
 							const players = Object.keys(
 								dynamicSnapshotsAll[color]?.players || {}

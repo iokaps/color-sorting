@@ -6,27 +6,27 @@ export type ColorName = string; // Now supports dynamic colors
 
 const COLOR_CLASSES: Record<string, string> = {
 	red: 'bg-rose-600',
-	blue: 'bg-blue-700',
+	blue: 'bg-blue-600',
 	green: 'bg-emerald-600',
-	yellow: 'bg-amber-600',
+	yellow: 'bg-amber-500',
 	purple: 'bg-purple-600',
-	pink: 'bg-pink-600',
+	pink: 'bg-pink-500',
 	indigo: 'bg-indigo-600',
 	cyan: 'bg-cyan-600',
-	orange: 'bg-orange-600',
+	orange: 'bg-orange-500',
 	lime: 'bg-lime-600'
 };
 
 const COLOR_HEX: Record<string, string> = {
 	red: '#e11d48',
-	blue: '#1e40af',
+	blue: '#2563eb',
 	green: '#059669',
-	yellow: '#b45309',
-	purple: '#a855f7',
+	yellow: '#f59e0b',
+	purple: '#9333ea',
 	pink: '#ec4899',
 	indigo: '#4f46e5',
 	cyan: '#0891b2',
-	orange: '#ea580c',
+	orange: '#f97316',
 	lime: '#65a30d'
 };
 

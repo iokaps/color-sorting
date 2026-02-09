@@ -32,14 +32,14 @@ const App: React.FC = () => {
 
 	return (
 		<>
-			<HostPresenterLayout.Root className="bg-slate-900">
+			<HostPresenterLayout.Root className="km-animated-bg-dark">
 				<HostPresenterLayout.Header />
 
 				<HostPresenterLayout.Main className="relative flex-col justify-center">
 					{/* QR Code - Fixed in top right corner */}
-					<div className="absolute top-8 right-8 flex flex-col items-center gap-2 rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
+					<div className="absolute top-8 right-8 flex flex-col items-center gap-2.5 rounded-2xl border border-white/10 bg-white/5 p-4 shadow-2xl backdrop-blur-md">
 						<KmQrCode data={playerLink} size={150} interactive={false} />
-						<p className="text-center text-sm font-medium text-white">
+						<p className="text-center text-sm font-medium text-white/80">
 							Scan to join
 						</p>
 					</div>
@@ -47,11 +47,18 @@ const App: React.FC = () => {
 					{/* Main content - centered */}
 					<div className="flex w-full flex-col items-center justify-center gap-12">
 						{!started ? (
-							<div className="text-center">
-								<h1 className="mb-4 text-6xl font-bold text-white">{title}</h1>
-								<p className="text-2xl text-slate-300">
+							<div className="km-fade-in-up text-center">
+								<h1 className="mb-4 text-6xl font-extrabold tracking-tight text-white drop-shadow-lg">
+									{title}
+								</h1>
+								<p className="text-2xl font-light text-slate-300/80">
 									Waiting for host to start the game...
 								</p>
+								<div className="mt-6 flex justify-center gap-1.5">
+									<span className="size-2.5 animate-bounce rounded-full bg-blue-400/60 [animation-delay:-0.3s]" />
+									<span className="size-2.5 animate-bounce rounded-full bg-blue-400/60 [animation-delay:-0.15s]" />
+									<span className="size-2.5 animate-bounce rounded-full bg-blue-400/60" />
+								</div>
 							</div>
 						) : gameComplete ? (
 							<FinalResultsView />

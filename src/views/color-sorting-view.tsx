@@ -190,19 +190,20 @@ const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
 	};
 
 	return (
-		<div className="flex h-full w-full flex-col items-center justify-center gap-2 overflow-y-auto px-2 py-2 sm:gap-4 sm:px-4 sm:py-4">
+		<div className="flex h-full w-full flex-col items-center justify-center gap-3 overflow-y-auto px-2 py-2 sm:gap-5 sm:px-4 sm:py-4">
 			{/* Color reference + Group size in row */}
-			<div className="flex items-center gap-3">
+			<div className="km-fade-in-up flex items-center gap-3">
 				<div
-					className={`relative flex h-16 w-24 items-center justify-center overflow-hidden rounded-xl shadow-lg sm:h-20 sm:w-32 ${getColorClass(playerColor)}`}
+					className={`relative flex h-16 w-24 items-center justify-center overflow-hidden rounded-2xl shadow-lg sm:h-20 sm:w-32 ${getColorClass(playerColor)}`}
 				>
-					<div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+					<div className="absolute inset-0 bg-gradient-to-b from-white/25 via-transparent to-black/10" />
+					<div className="km-shimmer absolute inset-0" />
 					<p className="relative line-clamp-3 px-2 text-center text-xs font-bold break-words text-white drop-shadow-sm sm:text-sm">
 						{colorNames[playerColor]}
 					</p>
 				</div>
-				<div className="rounded-xl border border-blue-100 bg-gradient-to-b from-blue-50 to-blue-100/50 px-4 py-2 text-center shadow-sm sm:px-6 sm:py-3">
-					<p className="text-2xl font-bold text-blue-600 sm:text-3xl">
+				<div className="rounded-2xl border border-blue-100/80 bg-gradient-to-b from-blue-50/80 to-blue-100/40 px-4 py-2.5 text-center shadow-sm backdrop-blur-sm sm:px-6 sm:py-3">
+					<p className="text-2xl font-extrabold text-blue-600 sm:text-3xl">
 						{playerCount}
 					</p>
 					<p className="text-[10px] font-medium text-blue-600/80 sm:text-xs">
@@ -217,21 +218,21 @@ const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
 			</div>
 
 			{/* Instructions */}
-			<div className="w-full max-w-xs text-center">
+			<div className="km-fade-in-up-delay-1 w-full max-w-xs text-center">
 				<p className="text-xs text-slate-600 sm:text-sm">
 					{config.colorSortingInstructionsMd}
 				</p>
 			</div>
 
 			{/* QR Code section */}
-			<div className="km-card w-full max-w-xs space-y-3 sm:max-w-sm">
+			<div className="km-card km-fade-in-up-delay-2 w-full max-w-xs space-y-3 sm:max-w-sm">
 				<p className="text-center text-sm font-semibold text-slate-700">
 					{config.shareYourCodeLabel}
 				</p>
-				<div className="flex justify-center rounded-xl bg-slate-50 p-4">
+				<div className="flex justify-center rounded-xl bg-gradient-to-b from-slate-50/80 to-slate-100/50 p-4">
 					<KmQrCode data={qrCodeData} size={150} />
 				</div>
-				<p className="text-center text-xs text-slate-500">
+				<p className="text-center text-xs text-slate-400">
 					{config.orientationLabel}
 				</p>
 			</div>
@@ -239,7 +240,7 @@ const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
 			{/* Scan button */}
 			<button
 				type="button"
-				className="km-btn-primary h-11 w-full max-w-xs text-sm font-semibold sm:max-w-sm"
+				className="km-btn-primary km-fade-in-up-delay-3 h-12 w-full max-w-xs text-sm font-semibold sm:max-w-sm"
 				onClick={() => setShowScanner(true)}
 			>
 				<Scan className="size-5" />
@@ -249,12 +250,12 @@ const ColorSortingViewInner: React.FC<{ playerColor: ColorName }> = ({
 			{/* Feedback message */}
 			{feedback && (
 				<div
-					className={`km-success-pop flex w-full max-w-xs items-center justify-center gap-2 rounded-2xl p-3 text-center text-sm font-medium sm:max-w-sm ${
+					className={`km-success-pop flex w-full max-w-xs items-center justify-center gap-2.5 rounded-2xl p-3.5 text-center text-sm font-medium shadow-sm sm:max-w-sm ${
 						feedbackType === 'success'
-							? 'bg-green-50 text-green-700 ring-1 ring-green-200'
+							? 'bg-green-50/90 text-green-700 ring-1 ring-green-200/80 backdrop-blur-sm'
 							: feedbackType === 'error'
-								? 'bg-red-50 text-red-700 ring-1 ring-red-200'
-								: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200'
+								? 'bg-red-50/90 text-red-700 ring-1 ring-red-200/80 backdrop-blur-sm'
+								: 'bg-blue-50/90 text-blue-700 ring-1 ring-blue-200/80 backdrop-blur-sm'
 					}`}
 				>
 					{feedbackType === 'success' && (

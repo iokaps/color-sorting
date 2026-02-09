@@ -27,21 +27,26 @@ export const ColorAssignmentView: React.FC = () => {
 	return (
 		<div className="flex h-full w-full flex-col items-center justify-center space-y-8 px-4 py-8 sm:py-12">
 			{/* Large color card with glow effect */}
-			<div className="relative">
+			<div className="km-scale-in relative">
 				{/* Glow effect */}
 				<div
-					className={`absolute -inset-4 rounded-[2rem] opacity-30 blur-2xl ${getColorClass(playerColor)}`}
+					className={`absolute -inset-6 rounded-[2.5rem] opacity-25 blur-3xl ${getColorClass(playerColor)}`}
 				/>
 				<div
-					className={`relative flex h-44 w-44 items-center justify-center rounded-3xl shadow-2xl sm:h-64 sm:w-64 ${getColorClass(playerColor)}`}
+					className={`absolute -inset-3 rounded-[2rem] opacity-15 blur-xl ${getColorClass(playerColor)}`}
+				/>
+				<div
+					className={`relative flex h-48 w-48 items-center justify-center rounded-3xl shadow-2xl sm:h-64 sm:w-64 ${getColorClass(playerColor)}`}
 				>
 					{/* Gradient overlay for depth */}
-					<div className="absolute inset-0 rounded-3xl bg-gradient-to-b from-white/20 to-transparent" />
+					<div className="absolute inset-0 rounded-3xl bg-gradient-to-b from-white/25 via-transparent to-black/10" />
+					{/* Shimmer sweep */}
+					<div className="km-shimmer absolute inset-0 rounded-3xl" />
 					<div className="relative px-4 text-center">
-						<p className="text-base font-light tracking-wide text-white/90 sm:text-xl">
+						<p className="text-base font-light tracking-widest text-white/80 uppercase sm:text-lg">
 							You are
 						</p>
-						<p className="mt-1 line-clamp-3 text-3xl font-bold break-words text-white drop-shadow-sm sm:text-5xl">
+						<p className="mt-2 line-clamp-3 text-3xl font-extrabold break-words text-white drop-shadow-lg sm:text-5xl">
 							{colorNames[playerColor]}
 						</p>
 					</div>
@@ -49,13 +54,13 @@ export const ColorAssignmentView: React.FC = () => {
 			</div>
 
 			{/* Instructions */}
-			<div className="prose prose-sm sm:prose w-full max-w-sm text-center">
+			<div className="prose prose-sm sm:prose km-fade-in-up-delay-2 w-full max-w-sm text-center">
 				<Markdown>{config.colorAssignmentMd}</Markdown>
 			</div>
 
 			{/* Modern waiting indicator with bouncing dots */}
-			<div className="flex items-center gap-3">
-				<div className="flex gap-1">
+			<div className="km-fade-in-up-delay-3 flex items-center gap-3">
+				<div className="flex gap-1.5">
 					<span className="size-2 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.3s]" />
 					<span className="size-2 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.15s]" />
 					<span className="size-2 animate-bounce rounded-full bg-slate-400" />

@@ -22,14 +22,14 @@ import ReactMarkdown from 'react-markdown';
 
 const COLOR_CLASSES: Record<string, string> = {
 	red: 'bg-rose-600',
-	blue: 'bg-blue-700',
+	blue: 'bg-blue-600',
 	green: 'bg-emerald-600',
-	yellow: 'bg-amber-600',
+	yellow: 'bg-amber-500',
 	purple: 'bg-purple-600',
-	pink: 'bg-pink-600',
+	pink: 'bg-pink-500',
 	indigo: 'bg-indigo-600',
 	cyan: 'bg-cyan-600',
-	orange: 'bg-orange-600',
+	orange: 'bg-orange-500',
 	lime: 'bg-lime-600'
 };
 
@@ -186,25 +186,25 @@ export const ColorNamingView: React.FC = () => {
 			<div className="km-card">
 				<label
 					htmlFor="number-of-colors"
-					className="block text-sm font-medium text-slate-700"
+					className="block text-sm font-semibold text-slate-800"
 				>
 					{config.numberOfColorsLabel}
 				</label>
 				<div className="mt-3 flex items-center gap-3">
 					<button
 						type="button"
-						className="km-btn-secondary size-12 text-xl font-bold"
+						className="km-btn-secondary size-11 rounded-xl text-lg font-bold"
 						onClick={() => handleColorCountChange(editedNumberOfColors - 1)}
 						disabled={isSubmitting || editedNumberOfColors <= 1}
 					>
 						−
 					</button>
-					<span className="w-16 text-center text-2xl font-bold text-slate-900">
+					<span className="w-16 text-center text-3xl font-extrabold text-slate-900 tabular-nums">
 						{editedNumberOfColors}
 					</span>
 					<button
 						type="button"
-						className="km-btn-secondary size-12 text-xl font-bold"
+						className="km-btn-secondary size-11 rounded-xl text-lg font-bold"
 						onClick={() => handleColorCountChange(editedNumberOfColors + 1)}
 						disabled={isSubmitting || editedNumberOfColors >= 10}
 					>
@@ -215,35 +215,39 @@ export const ColorNamingView: React.FC = () => {
 
 			{/* Color Names Section */}
 			<div>
-				<h3 className="mb-4 text-lg font-semibold text-slate-900">
+				<h3 className="mb-4 text-lg font-bold text-slate-900">
 					{config.colorNamesTitle}
 				</h3>
 				<div className="grid gap-4 sm:grid-cols-2">
 					{currentColors.map((color) => (
 						<div
 							key={color}
-							className="shadow-card space-y-3 overflow-hidden rounded-2xl bg-white p-5"
+							className="shadow-card hover:shadow-card-hover overflow-hidden rounded-2xl bg-white transition-all duration-300"
 						>
 							{/* Color preview */}
-							<div className={`h-14 rounded-xl ${COLOR_CLASSES[color]}`} />
+							<div className={`relative h-16 ${COLOR_CLASSES[color]}`}>
+								<div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-black/10" />
+								<div className="km-shimmer absolute inset-0" />
+							</div>
 
-							{/* Color input */}
-							<label
-								htmlFor={`color-${color}`}
-								className="block text-sm font-medium text-slate-700"
-							>
-								{config.colorNameLabel}
-							</label>
-							<input
-								id={`color-${color}`}
-								type="text"
-								value={editedNames[color] || ''}
-								onChange={(e) => handleNameChange(color, e.target.value)}
-								placeholder={colorNames[color]}
-								className="km-input"
-								disabled={isSubmitting}
-								maxLength={20}
-							/>
+							<div className="space-y-3 p-5">
+								<label
+									htmlFor={`color-${color}`}
+									className="block text-sm font-semibold text-slate-800"
+								>
+									{config.colorNameLabel}
+								</label>
+								<input
+									id={`color-${color}`}
+									type="text"
+									value={editedNames[color] || ''}
+									onChange={(e) => handleNameChange(color, e.target.value)}
+									placeholder={colorNames[color]}
+									className="km-input"
+									disabled={isSubmitting}
+									maxLength={20}
+								/>
+							</div>
 						</div>
 					))}
 				</div>
@@ -253,7 +257,7 @@ export const ColorNamingView: React.FC = () => {
 			<div className="km-card">
 				<label
 					htmlFor="round-duration"
-					className="block text-sm font-medium text-slate-700"
+					className="block text-sm font-semibold text-slate-800"
 				>
 					{config.roundDurationLabel}
 				</label>
@@ -273,7 +277,7 @@ export const ColorNamingView: React.FC = () => {
 			<div className="km-card">
 				<label
 					htmlFor="total-rounds"
-					className="block text-sm font-medium text-slate-700"
+					className="block text-sm font-semibold text-slate-800"
 				>
 					{config.totalRoundsLabel}
 				</label>
@@ -304,10 +308,10 @@ export const ColorNamingView: React.FC = () => {
 
 			{/* Presenter Visualization Mode Section */}
 			<div className="km-card">
-				<label className="block text-sm font-medium text-slate-700">
+				<label className="block text-sm font-semibold text-slate-800">
 					{config.visualizationModeLabel}
 				</label>
-				<div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+				<div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-5">
 					{(
 						[
 							{
@@ -343,10 +347,10 @@ export const ColorNamingView: React.FC = () => {
 							onClick={() => setEditedVisualizationMode(mode)}
 							disabled={isSubmitting}
 							className={cn(
-								'flex flex-col items-center gap-1.5 rounded-xl px-3 py-3 text-sm font-medium transition-all',
+								'flex flex-col items-center gap-1.5 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200',
 								editedVisualizationMode === mode
-									? 'bg-blue-500 text-white shadow-lg'
-									: 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+									? 'bg-gradient-to-b from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25'
+									: 'bg-slate-50 text-slate-700 ring-1 ring-slate-200/80 hover:bg-slate-100 hover:shadow-sm'
 							)}
 						>
 							<Icon className="size-5" />
@@ -360,7 +364,7 @@ export const ColorNamingView: React.FC = () => {
 			<div className="km-card">
 				<label
 					htmlFor="logo-upload"
-					className="block text-sm font-medium text-slate-700"
+					className="block text-sm font-semibold text-slate-800"
 				>
 					{config.logoUploadLabel}
 				</label>
