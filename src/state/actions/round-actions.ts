@@ -60,9 +60,11 @@ function assignColorsWithConstraints(
 		const previousColor = previousColors[playerId];
 
 		// Get available colors (exclude previous color if they had one)
-		const availableColors = previousColor
+		const filteredColors = previousColor
 			? COLORS.filter((c) => c !== previousColor)
 			: COLORS;
+		const availableColors =
+			filteredColors.length > 0 ? filteredColors : COLORS;
 
 		// Find the minimum count among available colors
 		const minCount = Math.min(...availableColors.map((c) => colorCounts[c]));

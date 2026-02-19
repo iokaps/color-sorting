@@ -25,9 +25,6 @@ export function useGlobalController() {
 	const roundEndedRef = useRef(false);
 	const lastRoundStartRef = useRef(0);
 
-	// Get dynamic colors based on numberOfColors
-	const COLORS = generateColorArray(numberOfColors);
-
 	// Maintain connection that is assigned to be the global controller
 	useEffect(() => {
 		// Check if global controller is online
@@ -44,7 +41,7 @@ export function useGlobalController() {
 			})
 			.then(() => {})
 			.catch(() => {});
-	}, [connectionIds, controllerConnectionId, numberOfColors]);
+	}, [connectionIds, controllerConnectionId]);
 
 	// Clear factions when a new round starts
 	// IMPORTANT: Clear AFTER results are calculated (not immediately)
@@ -99,8 +96,7 @@ export function useGlobalController() {
 		serverTime,
 		roundActive,
 		roundStartTimestamp,
-		numberOfColors,
-		COLORS
+		numberOfColors
 	]);
 
 	// Assign colors to late-joining players during active round
@@ -149,13 +145,7 @@ export function useGlobalController() {
 		};
 
 		assignColorToLateJoiners().catch(console.error);
-	}, [
-		isGlobalController,
-		roundActive,
-		connectionIds,
-		numberOfColors,
-		serverTime
-	]);
+	}, [isGlobalController, roundActive, connectionIds, numberOfColors]);
 
 	return isGlobalController;
 }
